@@ -133,13 +133,21 @@ public class Communicator {
 	 */
 	public static void selfTest() {
 		Communicator com = new Communicator();
+		(new KThread(new Listener(1, com))).fork();
+		(new KThread(new Listener(2, com))).fork();
+		(new KThread(new Speaker(1, com, 1))).fork();
+		(new KThread(new Speaker(2, com, 2))).fork();
+		(new KThread(new Speaker(3, com, 3))).fork();
+		(new KThread(new Listener(3, com))).fork();
+		/*
 		for(int i = 1; i < 3; i++){
 			(new KThread(new Listener(i, com))).fork();
 		}
 		for(int i = 1; i < 3; i++){
 			(new KThread(new Speaker(i, com, i))).fork();	
 		}
-		ThreadedKernel.alarm.waitUntil(400000);
+		*/
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	
 	Lock lock;
