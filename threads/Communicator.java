@@ -38,7 +38,6 @@ public class Communicator {
 	 */
 	public void speak(int word) {
 		lock.acquire();
-
 		while (AS != 0) {
 			WS++;
 			speakerCondition.sleep();
@@ -54,7 +53,6 @@ public class Communicator {
 		else {
 			if (WL != 0)
 				listenerCondition.wake();
-
 			returnCondition.sleep();
 
 			AS--;
@@ -77,8 +75,8 @@ public class Communicator {
 		lock.acquire();
 
 		while (AL != 0) {
+			WL++;
 			listenerCondition.sleep();
-
 			WL--;
 		}
 
@@ -89,7 +87,6 @@ public class Communicator {
 		else {
 			if (WS != 0)
 				speakerCondition.wake();
-
 			returnCondition.sleep();
 
 			AL--;
@@ -105,6 +102,54 @@ public class Communicator {
 		return word;
 	}
 
+	private static class Speaker implements Runnable {
+		Communicator com;
+		int index;
+		int message;
+		Speaker(int _index, Communicator _com, int _message) {
+			index = _index;
+			com = _com;
+			message = _message;
+		}
+		public void run() {
+			System.out.println("Speaker " + index + " speaks "+ message);
+			com.speak(message);
+		}
+	}
+	private static class Listener implements Runnable {
+		int index;
+		Communicator com;
+		Listener(int _index, Communicator _com) {
+			index = _index;
+			com = _com;
+		}
+		public void run() {
+			int temp = com.listen();
+			System.out.println("Listener " + index + " hears " + temp + " from speaker "+ temp);
+		}
+	}
+	/**
+	 * Tools for test Communicator
+	 */
+	public static void selfTest() {
+		Communicator com = new Communicator();
+		(new KThread(new Listener(1, com))).fork();
+		(new KThread(new Listener(2, com))).fork();
+		(new KThread(new Speaker(1, com, 1))).fork();
+		(new KThread(new Speaker(2, com, 2))).fork();
+		(new KThread(new Speaker(3, com, 3))).fork();
+		(new KThread(new Listener(3, com))).fork();
+		/*
+		for(int i = 1; i < 3; i++){
+			(new KThread(new Listener(i, com))).fork();
+		}
+		for(int i = 1; i < 3; i++){
+			(new KThread(new Speaker(i, com, i))).fork();	
+		}
+		*/
+		ThreadedKernel.alarm.waitUntil(100000);
+	}
+	
 	Lock lock;
 	Condition2 speakerCondition, listenerCondition, returnCondition;
 	int AS, WS, AL, WL;
