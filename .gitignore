@@ -1,4 +1,9 @@
 /proj1
 /proj2
 
+*.com
 *.class
+*.dll
+*.exe
+*.o
+*.so
