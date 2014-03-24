@@ -296,7 +296,7 @@ public class KThread {
 		boolean intStatus = Machine.interrupt().disable();
 
 		if (this.status != statusFinished) {
-			joinedThreadQueue.acquire(this);
+			//joinedThreadQueue.acquire(this);
 			this.joinedThreadQueue.waitForAccess(currentThread);
 			sleep();
 		}
@@ -424,7 +424,64 @@ public class KThread {
 
 		private int which;
 	}
+	
+	/**
+	 * Tool class for Test join
+	 */
+	private static class ToBeJoined implements Runnable {
+		private KThread toJoin;
+		
+		ToBeJoined(KThread tj){
+			toJoin = tj;
+		}
+		
+		public void run(){
+			System.out.println("* ToBeJoined starts running");
+			System.out.println("* ToJoin joins");
+			toJoin.join();
+			System.out.println("* ToBeJoined continues running after " + toJoin.getName() +  " finishes");
+		}
+	}
+	private static class ToJoin implements Runnable {
+		public void run() {
+			System.out.println("* ToJoin starts running");
+			System.out.println("* ToJoin ends running");
+		}
+	}
 
+	/**
+	 * Sub-Tests: different test cases
+	 */
+	private static void test1(){
+		//Test Case 1
+		System.out.println("\n*** Test Case 1 for join ***");
+		ToJoin toJoin = new ToJoin();
+		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
+		KThread toBeJoinedThread = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined Thread");
+		toBeJoinedThread.fork();
+		toJoinThread.fork();
+	}
+	private static void test2(){
+		//Test Case 2
+		System.out.println("\n*** Test Case 2 for join ***");
+		ToJoin toJoin = new ToJoin();
+		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
+		KThread toBeJoinedThread = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined Thread");
+		toJoinThread.fork();
+		toBeJoinedThread.fork();
+	}
+	private static void test3(){
+		//Test Case 2
+		System.out.println("\n*** Test Case 3 for join ***");
+		ToJoin toJoin = new ToJoin();
+		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
+		KThread toBeJoined1 = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined1 Thread");
+		KThread toBeJoined2 = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined2 Thread");
+		toBeJoined1.fork();
+		toJoinThread.fork();
+		toBeJoined2.fork();
+	}
+	
 	/**
 	 * Tests whether this module is working.
 	 */
@@ -434,7 +491,9 @@ public class KThread {
 		KThread forked = new KThread(new PingTest(1)).setName("forked thread");
 		forked.fork();
 		new PingTest(0).run();
-		forked.join();
+		forked.join();	
+		
+		test3();
 	}
 
 	private static final char dbgThread = 't';
