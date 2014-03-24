@@ -29,7 +29,7 @@ public class Boat {
 		BoatGrader b = new BoatGrader();
 
 		System.out.println("\n ***Testing Boats with only 2 children***");
-		begin(0, 2, b);
+		begin(12, 2, b);
 
 		// System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
 		// begin(1, 2, b);
@@ -62,20 +62,8 @@ public class Boat {
 		waitOnMolokai = new Condition(boat);
 		waitBoarding = new Condition(boat);
 		message = new Communicator();
-
+		
 		Runnable r = new Runnable() {
-			public void run() {
-				AdultItinerary();
-			}
-		};
-		
-		for(int i = 0; i < adults; i++){
-			KThread t = new KThread(r);
-			t.setName("Adult "+i);
-			t.fork();
-		}
-		
-		r = new Runnable() {
 			public void run() {
 				ChildItinerary();
 			}
@@ -84,6 +72,18 @@ public class Boat {
 		for(int i = 0; i < children; i++){
 			KThread t = new KThread(r);
 			t.setName("Child "+i);
+			t.fork();
+		}
+
+		r = new Runnable() {
+			public void run() {
+				AdultItinerary();
+			}
+		};
+		
+		for(int i = 0; i < adults; i++){
+			KThread t = new KThread(r);
+			t.setName("Adult "+i);
 			t.fork();
 		}
 		
