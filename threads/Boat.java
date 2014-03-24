@@ -3,6 +3,7 @@
 package nachos.threads;
 
 import nachos.ag.BoatGrader;
+import nachos.machine.Lib;
 
 public class Boat {
 	static BoatGrader bg;
