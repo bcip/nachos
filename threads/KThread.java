@@ -293,7 +293,7 @@ public class KThread {
 
 		Lib.assertTrue(this != currentThread);
 
-		boolean intStatus = Machine.interrupt().disabled();
+		boolean intStatus = Machine.interrupt().disable();
 
 		if (this.status != statusFinished) {
 			joinedThreadQueue.acquire(this);
@@ -431,8 +431,10 @@ public class KThread {
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-		new KThread(new PingTest(1)).setName("forked thread").fork();
+		KThread forked = new KThread(new PingTest(1)).setName("forked thread");
+		forked.fork();
 		new PingTest(0).run();
+		forked.join();
 	}
 
 	private static final char dbgThread = 't';
