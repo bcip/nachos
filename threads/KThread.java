@@ -448,7 +448,22 @@ public class KThread {
 			System.out.println("* ToJoin ends running");
 		}
 	}
-
+	private static class ToBeJoinedCouple implements Runnable {
+		private KThread t1, t2;
+		ToBeJoinedCouple(KThread T1, KThread T2) {
+			t1 = T1;
+			t2 = T2;
+		}
+		
+		public void run(){
+			System.out.println("* ToBeJoinedCouple starts running");
+			System.out.println("* " + t1.getName() + " joins");
+			t1.join();
+			System.out.println("* " + t2.getName() + " joins");
+			t2.join();
+			System.out.println("* ToBeJoinedCouple continues running after two joining threads");
+		}
+	}
 	/**
 	 * Sub-Tests: different test cases
 	 */
@@ -471,17 +486,28 @@ public class KThread {
 		toBeJoinedThread.fork();
 	}
 	private static void test3(){
-		//Test Case 2
+		//Test Case 3
 		System.out.println("\n*** Test Case 3 for join ***");
 		ToJoin toJoin = new ToJoin();
 		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
 		KThread toBeJoined1 = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined1 Thread");
 		KThread toBeJoined2 = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined2 Thread");
 		toBeJoined1.fork();
-		toJoinThread.fork();
 		toBeJoined2.fork();
+		toJoinThread.fork();
 	}
-	
+	private static void test4(){
+		//Test Case 4
+		System.out.println("\n*** Test Case 4 for join ***");
+		ToJoin toJoin1 = new ToJoin();
+		ToJoin toJoin2 = new ToJoin();
+		KThread t1 = new KThread(toJoin1).setName("ToJoin Thread 1");
+		KThread t2 = new KThread(toJoin2).setName("ToJoin Thread 2");
+		KThread toBeJoined = new KThread(new ToBeJoinedCouple(t1,t2)).setName("ToBeJoined Thread");
+		toBeJoined.fork();
+		t1.fork();
+		t2.fork();
+	}
 	/**
 	 * Tests whether this module is working.
 	 */
@@ -493,7 +519,7 @@ public class KThread {
 		new PingTest(0).run();
 		forked.join();	
 		
-		test3();
+		test4();
 	}
 
 	private static final char dbgThread = 't';

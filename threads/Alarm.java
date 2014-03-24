@@ -70,7 +70,7 @@ public class Alarm {
 		Machine.interrupt().restore(intStatue);
 	}
 
-	private class WaitThread {
+	private class WaitThread implements Comparable<WaitThread> {
 		WaitThread(long wakeTime, KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
 
@@ -79,9 +79,7 @@ public class Alarm {
 			this.thread = thread;
 		}
 
-		public int compareTo(Object o) {
-			WaitThread waitThread = (WaitThread) o;
-
+		public int compareTo(WaitThread waitThread) {
 			if (wakeTime < waitThread.wakeTime)
 				return -1;
 			else if (wakeTime > waitThread.wakeTime)
@@ -101,6 +99,32 @@ public class Alarm {
 		long wakeTime;
 		KThread thread;
 	}
-
+	
+	/**
+	 * Tools for test Alarm
+	 */
+	private static class AlarmTest implements Runnable {
+		private long delay;
+		AlarmTest(long _delay) {
+			delay = _delay;
+		}
+		
+		public void run() {
+			long now = Machine.timer().getTime();
+			System.out.println("Thread starts at " + now);
+			System.out.println("Thread calls waitUtill with delay " + delay);
+			ThreadedKernel.alarm.waitUntil(delay);
+			long newnow = Machine.timer().getTime();
+			System.out.println("Thread recovers at " + newnow + " (" + newnow + ">" + now + "+" + delay + ")");
+		}
+	}
+	public static void selfTest(){
+		KThread[] t = new KThread[10];
+		for(int i = 0; i < 10; i++){
+			t[i] = new KThread(new AlarmTest((long)((i+1) * 100)));
+			t[i].fork();
+		}
+	}
+	
 	java.util.PriorityQueue<WaitThread> waitQueue = new java.util.PriorityQueue<WaitThread>();
 }

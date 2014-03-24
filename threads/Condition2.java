@@ -82,6 +82,78 @@ public class Condition2 {
 		Machine.interrupt().restore(intStatus);
 	}
 
+	/**
+	 * Test tools for Condition2
+	 */
+	private static class Int {
+		int value;
+		Int(int _value){
+			value = _value;
+		}
+		public void inc(){
+			value++;
+		}
+		public void dec(){
+			value--;
+		}
+		public int val(){
+			return value;
+		}
+	}
+	private static class Producer implements Runnable {
+		private Int goods;
+		private Condition2 condition;
+		private Lock lock;
+		
+		Producer(Int _goods, Condition2 _condition, Lock _lock){
+			goods = _goods;
+			condition = _condition;
+			lock = _lock;
+		}
+		
+		public void run() {
+			lock.acquire();
+			goods.inc();
+			System.out.println("Producer produces 1 item (" + goods.val() + " items)");
+			condition.wakeAll();
+			lock.release();
+		}
+	}
+	private static class Consumer implements Runnable {
+		private Int goods;
+		private Condition2 condition;
+		private Lock lock;
+		
+		Consumer(Int _goods, Condition2 _condition, Lock _lock) {
+			goods = _goods;
+			condition = _condition;
+			lock = _lock;
+		}
+		
+		public void run() {
+			lock.acquire();
+			while(goods.val() < 1){
+				System.out.println("Consumer sleeps " + "(" + goods.val() + " items)");
+				condition.sleep();
+			}
+			goods.dec();
+			System.out.println("Consumer consumes " + "" + 1 + " item (" + goods.val() + " items)");
+			lock.release();
+		}
+	}
+	
+	public static void selfTest(){
+		Int goods = new Int(0);
+		Lock lock = new Lock();
+		Condition2 condition = new Condition2(lock);
+		KThread producer1 = new KThread(new Producer(goods, condition, lock));
+		KThread consumer1 = new KThread(new Consumer(goods, condition, lock));
+		KThread consumer2 = new KThread(new Consumer(goods, condition, lock));
+		consumer1.fork();
+		consumer2.fork();
+		producer1.fork();
+	}
+	
 	private Lock conditionLock;
 	private ThreadQueue waitQueue = ThreadedKernel.scheduler
 			.newThreadQueue(false);
