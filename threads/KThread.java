@@ -165,6 +165,8 @@ public class KThread {
 		});
 
 		ready();
+		
+		readyQueue.print();
 
 		Machine.interrupt().restore(intStatus);
 	}
@@ -296,8 +298,8 @@ public class KThread {
 		boolean intStatus = Machine.interrupt().disable();
 
 		if (this.status != statusFinished) {
-			//joinedThreadQueue.acquire(this);
 			this.joinedThreadQueue.waitForAccess(currentThread);
+			readyQueue.print();
 			sleep();
 		}
 
@@ -556,6 +558,11 @@ public class KThread {
 	 */
 	private ThreadQueue joinedThreadQueue = ThreadedKernel.scheduler
 			.newThreadQueue(true);
+	{
+		boolean intStatus = Machine.interrupt().disable();
+		joinedThreadQueue.acquire(this);
+		Machine.interrupt().restore(intStatus);
+	}
 
 	/**
 	 * Unique identifer for this thread. Used to deterministically compare

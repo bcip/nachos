@@ -146,12 +146,6 @@ public class PriorityScheduler extends Scheduler {
 			if (!transferPriority)
 				return;
 
-			if (occupyingThread != null)
-				getThreadState(occupyingThread).release(this);
-
-			if (thread == null)
-				return;
-
 			getThreadState(thread).acquire(this);
 			occupyingThread = thread;
 		}
@@ -161,15 +155,20 @@ public class PriorityScheduler extends Scheduler {
 
 			ThreadState nextThread = pickNextThread();
 
+			if (occupyingThread != null) {
+				getThreadState(occupyingThread).release(this);
+				occupyingThread = null;
+			}
+
 			if (nextThread == null)
 				return null;
 
 			waitingQueue.remove(nextThread);
+			nextThread.ready();
 
 			updateDonatingPriority();
 
-			if (transferPriority)
-				acquire(nextThread.getThread());
+			acquire(nextThread.getThread());
 
 			return nextThread.getThread();
 		}
@@ -189,7 +188,10 @@ public class PriorityScheduler extends Scheduler {
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// implement me (if you want)
+			
+			for(Iterator<ThreadState> iterator = waitingQueue.iterator(); iterator.hasNext(); )
+				System.out.print(iterator.next().getThread());
+			System.out.println();
 		}
 
 		public int getDonatingPriority() {
@@ -257,15 +259,15 @@ public class PriorityScheduler extends Scheduler {
 		protected TreeSet<ThreadState> waitingQueue = new TreeSet<ThreadState>();
 
 		/** The thread occupying this ThreadQueue. */
-		protected KThread occupyingThread;
+		protected KThread occupyingThread = null;
 
-		protected int donatingPriority;
+		protected int donatingPriority = priorityMinimum;
 
 		/**
 		 * The number that <tt>waitForAccess</tt> has been called. Used know the
 		 * time when each thread enqueue.
 		 */
-		protected long enqueueTimeCounter;
+		protected long enqueueTimeCounter = 0;
 
 		protected int id = numPriorityQueueCreated++;
 	}
@@ -386,6 +388,12 @@ public class PriorityScheduler extends Scheduler {
 			updateEffectivePriority();
 		}
 
+		public void ready() {
+			Lib.assertTrue(waitingFor != null);
+
+			waitingFor = null;
+		}
+
 		public int compareTo(ThreadState state) {
 
 			if (effectivePriority > state.effectivePriority)
@@ -420,7 +428,11 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		private void updateEffectivePriority() {
-			int newEffectivePriority = Math.max(priority, maxDonatedPriority);
+			int newEffectivePriority = priority;
+			if (!acquires.isEmpty())
+				newEffectivePriority = Math.max(priority, acquires.first()
+						.getDonatingPriority());
+
 			if (newEffectivePriority == effectivePriority)
 				return;
 
@@ -438,8 +450,6 @@ public class PriorityScheduler extends Scheduler {
 		protected int priority = priorityDefault;
 		/** The effective priority of the associated thread. */
 		protected int effectivePriority = priorityDefault;
-		/** The maximum of priorities donated to the associated thread. */
-		protected int maxDonatedPriority = priorityMinimum;
 		/** The ThreadQueue that the associated thread waiting for. */
 		protected PriorityQueue waitingFor = null;
 		/** The TreeMap storing the number of donated priorities. */
@@ -483,11 +493,15 @@ public class PriorityScheduler extends Scheduler {
 		thread1.join();
 		System.out.println("PriorityScheduler.test2() ends.");
 	}
-	
+
 	private static void test3() {
 		System.out.println("PriorityScheduler.test3() begins.");
+
 		KThread thread0 = new KThread(new PSTest(0));
 		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
 
 		boolean intStatus = Machine.interrupt().disable();
 
@@ -495,17 +509,26 @@ public class PriorityScheduler extends Scheduler {
 
 		Machine.interrupt().restore(intStatus);
 
-		thread0.fork();
-		thread1.fork();
+		/*
+		 * The main thread which has increased its priority is waiting for
+		 * thread1.
+		 */
+		ThreadedKernel.scheduler.increasePriority();
 
-		thread0.join();
+		thread1.fork();
+		thread0.fork();
+
 		thread1.join();
+		thread0.join();
+		ThreadedKernel.scheduler.decreasePriority();
+
 		System.out.println("PriorityScheduler.test3() ends.");
 	}
 
 	public static void selfTest() {
 		test1();
 		test2();
+		test3();
 	}
 
 	private static class PSTest implements Runnable {
@@ -517,6 +540,10 @@ public class PriorityScheduler extends Scheduler {
 
 		public void run() {
 			int i;
+			boolean intStatus = Machine.interrupt().disable();
+			System.out.println("EffectivePriority of thread" + index + " is "
+					+ ThreadedKernel.scheduler.getEffectivePriority());
+			Machine.interrupt().restore(intStatus);
 			for (i = 0; i < 5; i++) {
 				System.out.println("PSTest " + index + " loop " + i);
 				KThread.yield();
