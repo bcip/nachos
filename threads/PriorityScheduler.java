@@ -443,4 +443,25 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		protected long enqueueTime;
 	}
+	private static void testWithoutDonation(){
+	}
+	private static void testWithAlteredPriority(){
+	}
+	private static void testWithDonation(){
+	}
+	private class PSTest implements Runnable {
+		private int index;
+		PSTest(int _index){
+			index = _index;
+		}
+		public void run() {
+			System.out.println("PSTest " + index + " starts running");
+			System.out.println("PSTest " + index + " ends running");
+		}
+	}
+	public static void selfTest(){
+		//boolean status = Machine.interrupt().disable();
+		//ThreadedKernel.scheduler.setPriority(thread, priority);
+		//Machine.interrupt().restore(status);
+	}
 }
