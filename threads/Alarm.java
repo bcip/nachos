@@ -115,7 +115,7 @@ public class Alarm {
 			System.out.println("Thread calls waitUtill with delay " + delay);
 			ThreadedKernel.alarm.waitUntil(delay);
 			long newnow = Machine.timer().getTime();
-			System.out.println("Thread recovers at " + newnow + " (" + newnow + ">" + now + "+" + delay + ")");
+			System.out.println("Thread recovers at " + newnow + " (" + newnow + ">=" + now + "+" + delay + ")");
 		}
 	}
 	public static void selfTest(){
@@ -124,6 +124,7 @@ public class Alarm {
 			t[i] = new KThread(new AlarmTest((long)((i+1) * 100)));
 			t[i].fork();
 		}
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	
 	java.util.PriorityQueue<WaitThread> waitQueue = new java.util.PriorityQueue<WaitThread>();
