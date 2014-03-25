@@ -34,7 +34,7 @@ Wang Qinshi\\ 2012011311}
 \begin{document}
 \maketitle
 \tableofcontents{}
-\section{Implementation of \texttt{KTread.join()}}
+ \section{Implementation of \texttt{KTread.join()}}
 \subsection{Overview}
 In this task, we need to implement \texttt{KThread.join()}, and the method should 
 \begin{enumerate}
@@ -176,7 +176,7 @@ And the results of tests are as follows.
 \item For \texttt{test4}, we have a thread be joined by two different threads;
 \end{enumerate}
 
-And all the results shows that the joining thread finished before the threads being joined continue which is the expected results.
+ And all the results shows that the joining thread finished before the threads being joined continue which is the expected results.
 \section{Implementation of \texttt{Condition2}}
 \subsection{Overview}
 Implement \texttt{Condition2} without using semaphore and \texttt{Condition2} must be equivalent implementation as \texttt{Condition}.
@@ -795,12 +795,250 @@ we can avoid priority inversion.
 		\EndProcedure
   \end{algorithmic}
 \end{algorithm}
-\subsection{Testing Plan}
+\subsection{Test}
 \begin{enumerate}
 	\item Set up serveral threads with random priorities associated with one condition. And test whether they execute in decreasing order.
 	\item Set up serveral threads with random priorities associated with mutiple conditions. And test whether they execute in decreasing order. And
 		Test by printing that whether the waiting thread properly donate its priority and whether the quit-holding thread recover its priority.
 \end{enumerate}
+The following are test codes.
+\begin{lstlisting}[language=java]
+private static void test1() {
+		System.out.println("PriorityScheduler.test1() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test1() ends.");
+	}
+
+	private static void test2() {
+		System.out.println("PriorityScheduler.test2() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test2() ends.");
+	}
+
+	private static void test3() {
+		System.out.println("PriorityScheduler.test3() begins.");
+
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		/*
+		 * The main thread which has increased its priority is waiting for
+		 * thread1.
+		 */
+		ThreadedKernel.scheduler.increasePriority();
+		thread1.join();
+		thread0.join();
+		ThreadedKernel.scheduler.decreasePriority();
+
+		System.out.println("PriorityScheduler.test3() ends.");
+	}
+	
+	private static void test4() {
+		System.out.println("PriorityScheduler.test4() begins.");
+
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		/*
+		 * The main thread which has increased its priority is waiting for
+		 * thread1.
+		 */
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		thread1.join();
+		thread0.join();
+		ThreadedKernel.scheduler.decreasePriority();
+		ThreadedKernel.scheduler.decreasePriority();
+
+		System.out.println("PriorityScheduler.test4() ends.");
+	}
+	
+	private static void test5() {
+		System.out.println("PriorityScheduler.test5() begins.");
+
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+		KThread thread2 = new KThread(new PSTest(2));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
+		thread2.setName("thread2");
+
+		/* Disable interrupt for convenience. */
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+		ThreadedKernel.scheduler.setPriority(thread1, 2);
+		ThreadedKernel.scheduler.setPriority(thread2, 1);
+
+		thread0.fork();
+		thread1.fork();
+		thread2.fork();
+		
+		/* Priority of thread1 is changed later than thread2, but that thread is enqueued earlier. */
+		ThreadedKernel.scheduler.setPriority(thread1, 1);
+
+		/* Wait until all the threads ends. */
+		thread0.join();
+		thread1.join();
+		thread2.join();
+		
+		Machine.interrupt().restore(intStatus);
+
+		System.out.println("PriorityScheduler.test5() ends.");
+	}
+
+	public static void selfTest() {
+		test1();
+		test2();
+		test3();
+		test4();
+		test5();
+	}
+
+	private static class PSTest implements Runnable {
+		private int index;
+
+		PSTest(int _index) {
+			index = _index;
+		}
+
+		public void run() {
+			int i;
+			boolean intStatus = Machine.interrupt().disable();
+			System.out.println("EffectivePriority of thread" + index + " is "
+					+ ThreadedKernel.scheduler.getEffectivePriority());
+			Machine.interrupt().restore(intStatus);
+			for (i = 0; i < 5; i++) {
+				System.out.println("PSTest " + index + " loop " + i);
+				KThread.yield();
+			}
+		}
+	}
+\end{lstlisting}
+The results go as follows:
+\begin{lstlisting}
+PriorityScheduler.test1() begins.
+EffectivePriority of thread0 is 1
+PSTest 0 loop 0
+EffectivePriority of thread1 is 1
+PSTest 1 loop 0
+PSTest 0 loop 1
+PSTest 1 loop 1
+PSTest 0 loop 2
+PSTest 1 loop 2
+PSTest 0 loop 3
+PSTest 1 loop 3
+PSTest 0 loop 4
+PSTest 1 loop 4
+PriorityScheduler.test1() ends.
+PriorityScheduler.test2() begins.
+EffectivePriority of thread0 is 2
+PSTest 0 loop 0
+PSTest 0 loop 1
+PSTest 0 loop 2
+PSTest 0 loop 3
+PSTest 0 loop 4
+EffectivePriority of thread1 is 1
+PSTest 1 loop 0
+PSTest 1 loop 1
+PSTest 1 loop 2
+PSTest 1 loop 3
+PSTest 1 loop 4
+PriorityScheduler.test2() ends.
+PriorityScheduler.test3() begins.
+EffectivePriority of thread1 is 2
+PSTest 1 loop 0
+EffectivePriority of thread0 is 2
+PSTest 0 loop 0
+PSTest 1 loop 1
+PSTest 0 loop 1
+PSTest 1 loop 2
+PSTest 0 loop 2
+PSTest 1 loop 3
+PSTest 0 loop 3
+PSTest 1 loop 4
+PSTest 0 loop 4
+PriorityScheduler.test3() ends.
+PriorityScheduler.test4() begins.
+EffectivePriority of thread1 is 3
+PSTest 1 loop 0
+PSTest 1 loop 1
+PSTest 1 loop 2
+PSTest 1 loop 3
+PSTest 1 loop 4
+EffectivePriority of thread0 is 3
+PSTest 0 loop 0
+PSTest 0 loop 1
+PSTest 0 loop 2
+PSTest 0 loop 3
+PSTest 0 loop 4
+PriorityScheduler.test4() ends.
+PriorityScheduler.test5() begins.
+EffectivePriority of thread0 is 2
+PSTest 0 loop 0
+PSTest 0 loop 1
+PSTest 0 loop 2
+PSTest 0 loop 3
+PSTest 0 loop 4
+EffectivePriority of thread1 is 1
+EffectivePriority of thread2 is 1
+PSTest 2 loop 0
+PSTest 1 loop 0
+PSTest 2 loop 1
+PSTest 1 loop 1
+PSTest 2 loop 2
+PSTest 1 loop 2
+PSTest 2 loop 3
+PSTest 1 loop 3
+PSTest 2 loop 4
+PSTest 1 loop 4
+PriorityScheduler.test5() ends.
+\end{lstlisting}
 \section{Solution to \texttt{Boat} Problem}
 \subsection{Overview}
 
