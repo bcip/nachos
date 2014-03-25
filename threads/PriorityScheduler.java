@@ -128,18 +128,23 @@ public class PriorityScheduler extends Scheduler {
 	/**
 	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
 	 */
-	protected class PriorityQueue extends ThreadQueue {
+	protected class PriorityQueue extends ThreadQueue implements
+			Comparable<PriorityQueue> {
 		PriorityQueue(boolean transferPriority) {
 			this.transferPriority = transferPriority;
 		}
 
 		public void waitForAccess(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
+			
 			getThreadState(thread).waitForAccess(this, enqueueTimeCounter++);
 		}
 
 		public void acquire(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
+			
+			if(!transferPriority)
+				return;
 
 			if (occupyingThread != null)
 				getThreadState(occupyingThread).release(this);
@@ -155,12 +160,17 @@ public class PriorityScheduler extends Scheduler {
 			Lib.assertTrue(Machine.interrupt().disabled());
 
 			ThreadState nextThread = pickNextThread();
+			
+			if(nextThread == null)
+				return null;
 
-			acquire(nextThread.getThread());
+			waitingQueue.remove(nextThread);
 			
-			if(nextThread != null)
-				updateEffectivePriority(nextThread.getThread());
+			updateDonatingPriority();
 			
+			if(transferPriority)
+				acquire(nextThread.getThread());
+
 			return nextThread.getThread();
 		}
 
@@ -171,9 +181,9 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the next thread that <tt>nextThread()</tt> would return.
 		 */
 		protected ThreadState pickNextThread() {
-			if(!waitingQueue.isEmpty())
-				return getThreadState(waitingQueue.first());
-			
+			if (!waitingQueue.isEmpty())
+				return waitingQueue.first();
+
 			return null;
 		}
 
@@ -186,9 +196,7 @@ public class PriorityScheduler extends Scheduler {
 			return donatingPriority;
 		}
 
-		public int compareTo(Object o) {
-			PriorityQueue queue = (PriorityQueue) o;
-
+		public int compareTo(PriorityQueue queue) {
 			if (donatingPriority > queue.donatingPriority)
 				return -1;
 			if (donatingPriority < queue.donatingPriority)
@@ -203,13 +211,13 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		public void prepareToUpdateEffectivePriority(KThread thread) {
-			boolean success = waitingQueue.remove(thread);
+			boolean success = waitingQueue.remove(getThreadState(thread));
 
 			Lib.assertTrue(success);
 		}
 
 		public void updateEffectivePriority(KThread thread) {
-			waitingQueue.add(thread);
+			waitingQueue.add(getThreadState(thread));
 
 			updateDonatingPriority();
 		}
@@ -220,7 +228,7 @@ public class PriorityScheduler extends Scheduler {
 			if (waitingQueue.isEmpty())
 				newDonatingPriority = priorityMinimum;
 			else if (transferPriority)
-				newDonatingPriority = getThreadState(waitingQueue.first())
+				newDonatingPriority = waitingQueue.first()
 						.getEffectivePriority();
 			else
 				newDonatingPriority = priorityMinimum;
@@ -228,7 +236,8 @@ public class PriorityScheduler extends Scheduler {
 			if (newDonatingPriority == donatingPriority)
 				return;
 
-			Lib.assertTrue(occupyingThread != null);
+			if(occupyingThread == null)
+				return;
 
 			getThreadState(occupyingThread).prepareToUpdateDonatingPriority(
 					this);
@@ -245,7 +254,7 @@ public class PriorityScheduler extends Scheduler {
 		public boolean transferPriority;
 
 		/** The threads waiting in this ThreadQueue. */
-		protected TreeSet<KThread> waitingQueue = new TreeSet<KThread>();
+		protected TreeSet<ThreadState> waitingQueue = new TreeSet<ThreadState>();
 
 		/** The thread occupying this ThreadQueue. */
 		protected KThread occupyingThread;
@@ -270,7 +279,7 @@ public class PriorityScheduler extends Scheduler {
 	 * 
 	 * @see nachos.threads.KThread#schedulingState
 	 */
-	protected class ThreadState {
+	protected class ThreadState implements Comparable<ThreadState> {
 		/**
 		 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 		 * specified thread.
@@ -281,8 +290,8 @@ public class PriorityScheduler extends Scheduler {
 		public ThreadState(KThread thread) {
 			this.thread = thread;
 		}
-		
-		public KThread getThread(){
+
+		public KThread getThread() {
 			return thread;
 		}
 
@@ -377,8 +386,7 @@ public class PriorityScheduler extends Scheduler {
 			updateEffectivePriority();
 		}
 
-		public int compareTo(Object o) {
-			ThreadState state = (ThreadState) o;
+		public int compareTo(ThreadState state) {
 
 			if (effectivePriority > state.effectivePriority)
 				return -1;
@@ -443,25 +451,32 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		protected long enqueueTime;
 	}
-	private static void testWithoutDonation(){
+
+	private static void testWithoutDonation() {
 	}
-	private static void testWithAlteredPriority(){
+
+	private static void testWithAlteredPriority() {
 	}
-	private static void testWithDonation(){
+
+	private static void testWithDonation() {
 	}
+
 	private class PSTest implements Runnable {
 		private int index;
-		PSTest(int _index){
+
+		PSTest(int _index) {
 			index = _index;
 		}
+
 		public void run() {
 			System.out.println("PSTest " + index + " starts running");
 			System.out.println("PSTest " + index + " ends running");
 		}
 	}
-	public static void selfTest(){
-		//boolean status = Machine.interrupt().disable();
-		//ThreadedKernel.scheduler.setPriority(thread, priority);
-		//Machine.interrupt().restore(status);
+
+	public static void selfTest() {
+		// boolean status = Machine.interrupt().disable();
+		// ThreadedKernel.scheduler.setPriority(thread, priority);
+		// Machine.interrupt().restore(status);
 	}
 }
