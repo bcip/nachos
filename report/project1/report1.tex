@@ -1,0 +1,553 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\title{Project 1 - Build a thread system for kernel processes}
+\author{Xie Yuanhang\\ 2011012344\and
+Kuang Zhonghong\\ 2011012357\and
+Li Qingyang\\ 2011012360\and
+Yin Mingtian\\ 2011012362\and
+Wang Qinshi\\ 2012011311}
+\date{}
+\begin{document}
+\maketitle
+\tableofcontents{}
+\section{Implementation of \texttt{KTread.join()}}
+\subsection{Overview}
+In this task, we need to implement \texttt{KThread.join()}, and the method should 
+\begin{enumerate}
+	\item[$\bullet$] if this is finished return immediately
+	\item[$\bullet$] be called only once
+	\item[$\bullet$] store currentThread and wake it later
+	\item[$\bullet$] assure that the thread finish executing normally
+\end{enumerate}
+\subsection{Correctness Constraints}
+\begin{enumerate}
+	\item[$\bullet$] Corner cases: when this equals to currentThread or this is already finished, return immediately
+	\item[$\bullet$] Need to be atomic by disable interruption and restore interruption at last
+	\item[$\bullet$] When this thread finish, it should wake the stored thread
+\end{enumerate}
+\subsection{Declaration}
+\begin{enumerate}
+	\item[$\bullet$] Add new state variable \texttt{waitQueue} which is a \texttt{ThreadQueue(true)} into \texttt{KThread}.
+	\item[$\bullet$] Modification of \texttt{join()}:
+		Firstly, disable interruption to make the operation atomic and restore it at last; 
+		secondly, prevent joining itself and prevent a finished thread from joining others, otherwise, let the currentThread sleep to wait this method finish.
+	\item[$\bullet$] Modification of \texttt{finish()}:
+		Assure that once this method is finished, wake the thread join it to let the joining thread normally continue executing.
+\end{enumerate}
+\subsection{Description}
+Shown in pseudocode.
+\begin{algorithm}
+  \begin{algorithmic}
+    \Procedure {join()}{}
+			\State Disable Interruption
+				\If{currentThread == this or this.status == statusFinished}
+					\State Restore Interruption
+					\State \Return
+				\Else
+					\State add currentThread into waitQueue
+					\State currentThread sleep
+				\EndIf
+			\State Restore Interruption
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {finish()}{}
+			\State ...
+			\State currentThread.status = statusFinished
+			\State Ready thread in waitQueue
+			\State sleep()
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\subsection{Testing Plan}
+Using \texttt{selfTest()} method in \texttt{KThread},
+\begin{enumerate}
+	\item Let Thread A, B, C each prints out some statements.
+	\item Thread A join Thread B
+	\item Thread A join Thread B multiple times
+	\item Thread A join itself
+	\item Thread A which is finished join Thread B
+	\item Test a series of threads. Thread C joins Thread B, Thread B joins Thread A.
+\end{enumerate}
+\section{Implementation of \texttt{Condition2}}
+\subsection{Overview}
+Implement \texttt{Condition2} without using semaphore and \texttt{Condition2} must be equivalent implementation as \texttt{Condition}.
+\subsection{Correctness Constraints}
+\begin{enumerate}
+	\item[$\bullet$] \texttt{sleep} method:
+		\begin{enumerate}
+			\item[-] Atomically release the associated lock and put the current thread to sleep until be waken
+			\item[-] The associated lock must be held by current thread before the method and re-required after this method.
+		\end{enumerate}
+	\item[$\bullet$] \texttt{wake} method:
+		\begin{enumerate}
+			\item[-] Atomically wake up a thread which called \texttt{sleep}
+			\item[-] The associated lock must be held by current thread before the method.
+		\end{enumerate}
+	\item[$\bullet$] \texttt{wakeAll} method:
+		\begin{enumerate}
+			\item[-] Atomically wake up all thread which called \texttt{sleep} on this condition
+			\item[-] The associated lock must be held by current thread before the method.
+		\end{enumerate}
+\end{enumerate}
+\subsection{Declaration}
+\begin{enumerate}
+	\item[$\bullet$] Add new state variable \texttt{waitQueue} which is a \texttt{ThreadQueue} into \texttt{Condition2}.
+	\item[$\bullet$] \texttt{sleep} method: place currentThread into ThreadQueue and release the lock, then sleep the currentThread and then 
+		re-acquire the lock when it return from \texttt{sleep}
+	\item[$\bullet$] \texttt{wake} method: remove the thread from the waitQueue and put it on the ready Queue
+	\item[$\bullet$] \texttt{wakeAll} method: remove all threads from the waitQueue and put them on the ready Queue
+\end{enumerate}
+\subsection{Description}
+\begin{algorithm}
+  \begin{algorithmic}
+    \Procedure {sleep()}{}
+			\State Lib.assertTrue conditionLock.isHeldByCurrentThread
+			\State Disable Interruption
+			\State Add currentThread into waitQueue
+			\State Release the conditionLock
+			\State currentThread sleep
+			\State Acquire the conditionLock
+			\State Restore Interruption
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {wake()}{}
+			\State Lib.assertTrue conditionLock.isHeldByCurrentThread
+			\State Disable Interruption
+			\If{waitQueue is not empty}
+				\State Remove and wake the first thread in waitQueue
+			\EndIf
+			\State Restore Interruption
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {wakeAll()}{}
+			\State Lib.assertTrue conditionLock.isHeldByCurrentThread
+			\State Disable Interruption
+			\While{waitQueue is not empty}
+				\State Remove and wake the first thread in waitQueue
+			\EndWhile
+			\State Restore Interruption
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\subsection{Testing Plan}
+Using \texttt{selfTest()} in \texttt{Condition2},
+\begin{enumerate}
+	\item Sleep many threads on one condition and then \texttt{wake} one thread and verify by printing
+	\item Sleep many threads on one condition and then \texttt{wakeAll} threads and verify by printing
+	\item Sleep many threads on serveral conditions and then \texttt{wakeAll} threads of one condition and
+		verify only threads associated by that condition wake by printing
+\end{enumerate}
+\section{Implementation of \texttt{Alarm}}
+\subsection{Overview}
+Implementation of \texttt{Alarm} class, such that after the thread called \texttt{waitUtill(x)} at time \texttt{t} then \texttt{timerInterrupt} 
+wake the thread after time \texttt{x+t}.
+\subsection{Correctness Constraints}
+\begin{enumerate}
+	\item[$\bullet$] \texttt{waitUtill} method: Move the calling thread into waitQueue and block the thread. 
+	\item[$\bullet$] \texttt{timerInterrupt} method: The thread should be woken when the interval on the call is over.
+\end{enumerate}
+\subsection{Declaration}
+\begin{enumerate}
+	\item[$\bullet$] Create a new class \texttt{WaitThread} which contains a thread and its wake time. 
+Add a new instance variable \texttt{waitQueue} of \texttt{WaitThread} which is a \texttt{PriorityQueue} with wake time as priority. 
+	\item[$\bullet$] \texttt{waitUtill} method: Calculate the wake time by adding x to current time and the \texttt{WaitThread} of the thread
+		should be store in waitQueue which is a priority queue(hence is efficient).
+	\item[$\bullet$] \texttt{timerInterrupt} method: use a while loop to wake threads whose wake time is less than current time.
+\end{enumerate}
+\subsection{Description}
+\begin{algorithm}
+  \begin{algorithmic}
+    \Procedure {waitUntil}{x}
+			\State Disable Interruption
+			\State Calculate the wake time(x + currentTime) and create a waitThread
+			\State Put waitThread into waitQueue
+			\State sleep this thread
+			\State Restore Interruption
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {timerInterrupt()}{}
+			\State Disable Interruption
+			\While{waitQueue is not empty AND wake time of first thread in waitQueue $<$ currentTime}
+					\State wake first thread in waitQueue
+			\EndWhile
+			\State Restore Interruption
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+ \subsection{Testing Plan}
+ Call \texttt{waitUtill} by several threads and print the calling time and the wake time. Find out whether the threads are waken after wake time. 
+ Note that \texttt{x} should be valid value.
+\section{Implementation of \texttt{Communicator}}
+\subsection{Overview}
+Implementat \texttt{Communicator} class. Two methods \texttt{speak} and \texttt{listener} to implement. The message is passed from exactly one 
+speaker to exactly one listener.
+\subsection{Correctness Constraints}
+\begin{enumerate}
+	\item[$\bullet$] Listeners wait when there is no speaker
+	\item[$\bullet$] Speakers wait when there is no listener
+\end{enumerate}
+\subsection{Declaration}
+\begin{enumerate}
+	\item[$\bullet$] Add a state variable \texttt{lock} which is a \texttt{Lock} into \texttt{Communicator}. 
+		Add four counters \texttt{AS, WS, AL, WL} initially as 0. Add three \texttt{condition}s for speaker, listener and return with the same lock.
+		Add a state variable \texttt{word} to store words from speakers.
+	\item[$\bullet$] Note that the first speaker or listener is what we call active speaker
+		or listener and is exchanging message and sleep on condition utill other one wakes it up and both return.
+	\item[$\bullet$] A speaker speaks to only one listener and a listener listens to only one speaker, so the waiting speaker(listener) will be 
+		blocked by active speaker(listener).
+\end{enumerate}
+\subsection{Description}
+\begin{algorithm}
+  \begin{algorithmic}
+    \Procedure {Communicator()}{}
+			\State initialize lock
+			\State initialize AS WS AL WL to 0
+			\State initialize conditions with same lock
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {speak}{word}
+			\State Acquire the lock
+			\While{AS != 0}
+				\State WS$++$
+				\State $//$ sleep on condition speaker
+				\State sleep
+				\State WS$--$
+			\EndWhile
+			\State AS$++$
+			\State set word
+			\If{AL != 0}
+				\State Wake active listener
+			\Else
+				\If{WL != 0}
+					\State wake one listener
+				\EndIf
+				\State $//$ in case that the later speaker runs too fast and cover the word
+				\State $//$ sleep on condition return
+				\State sleep till the wait listener to return 		
+				\State AS--
+				\State AL--
+				\If{WS != 0}
+					\State wake the wait speaker
+				\EndIf
+			\EndIf
+			\State Release the lock
+			\State \Return
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+	\begin{algorithmic}
+    \Procedure {listener()}{}
+			\State Acquire the lock
+			\While{AL != 0}
+				\State WL$++$
+				\State $//$ sleep on condition listener
+				\State sleep
+				\State WL$--$
+			\EndWhile
+			\State AL$++$
+			\If{AS != 0}
+				\State Wake active speaker
+			\Else
+				\If{WS != 0}
+					\State wake one speaker
+				\EndIf
+				\State $//$ in case that the later listener runs too fast and retreive the word
+				\State $//$ sleep on condition return
+				\State sleep till the wait speaker to return 		
+				\State AL--
+				\State AS--
+				\If{WL != 0}
+					\State wake the wait listener
+				\EndIf
+			\EndIf
+			\State retreive word
+			\State Release the lock
+			\State \Return
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\subsection{Testing Plan}
+\begin{enumerate}
+	\item Test a senquence of speakers and listeners in different orders and check the output.
+	\item Set up a random number of speakers and listeners and test whether the communication message will be lost.
+\end{enumerate}
+\section{Implementation of \texttt{PriorityScheduler}}
+\subsection{Overview}
+Implement \texttt{PriorityScheduler} class so that the scheduler can properly schedule the threads by its priority and by priority donation 
+we can avoid priority inversion.
+\subsection{Correctness Constraints}
+\begin{enumerate}
+	\item[$\bullet$] Waiting thread donates its priority to the thread which is holding the resource to avoid priority inversion.
+	\item[$\bullet$] Scheduler always retreive the thread with highest priority from the waitingQueue.
+\end{enumerate}
+\subsection{Declaration}
+\begin{enumerate}
+	\item[$\bullet$] Here we only consider the case \texttt{transferPriority} is true, since when it's false, we only have to sort the threads by 
+		their o riginal priority and don't need to calculate \texttt{EP}.
+	\item[$\bullet$] In \texttt{PriorityQueue}: \\
+		Add \texttt{waitingList}: a priority-queue(realized by maximal heap or red-black tree) by EP of \texttt{ThreadState} waiting for this resource.
+		Add a \texttt{maxEP} denotes maximal EP in the \texttt{waitingQueue}.
+		Add a \texttt{boolean} \texttt{changed} denotes whether \texttt{maxEP} should be updated.
+		Add a \texttt{ThreadState} \texttt{master} which is occupying the resource.
+	\item[$\bullet$] In \texttt{ThreadState}: \\
+		Add a list by EP of \texttt{PriorityQueue} \texttt{occupiedResources} collects the resources which is now occupied by this thread. 
+		Add a list by EP of \texttt{PriorityQueue} \texttt{acquiredResources} collects the resources which is being acquired(but no yet) by this thread.
+		Add a \texttt{boolean} \texttt{changed} denotes whether \texttt{EP} should be updated.
+		Add a \texttt{EP} denotes EP of this thread.
+	\item[$\bullet$] The EP should be recursively updated when a new waiting thread enter or when a thread quit holding resources. 
+		And updated by rules: Waiting thread donates its priority to the thread which is holding the resource to avoid priority inversion.
+\end{enumerate}
+\subsection{Description}
+\begin{algorithm}
+	\caption{PriorityQueue}
+	\begin{algorithmic}
+		\Procedure {getMaxEP()}{}
+			\If{!transferPriority}
+				\State \Return minimum priority
+			\EndIf
+			\If{changed}
+				\State maxEP $\leftarrow$ minimum priority
+				\For{each ThreadState ts in waitingQueue}
+					\State temp $\leftarrow$ MAX(maxEP, ts.getEP())
+				\EndFor
+				changed $\leftarrow$ false
+			\EndIf
+			\State \Return maxEP
+		\EndProcedure
+	\end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {waitForAccess}{KThread thread}
+			\State Lib.assertTrue(Machine.interrupt.disable()))
+			\State Add (ts $\leftarrow$ getThreadState(thread)) into waitingQueue
+			\State ts.waitForAccess(this)
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {acquire}{KThread thread}
+			\State Lib.assertTrue(Machine.interrupt.disable()))
+			\If{master != null}
+				\State Remove this from master.occupiedResource
+			\EndIf
+			\State getThreadState(thread).acquire(this)
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {nextThread()}{}
+			\State Lib.assertTrue(Machine.interrupt.disable()))
+			\If{master != null}
+				\State Remove this from master.occupiedResource
+			\EndIf
+			\State thread $\leftarrow$ null
+			\If{waitingQueue is not empty}
+				\State thread $\leftarrow$ pickNextThread()
+				\State Remove thread from waitingQueue
+				\State thread.acquire(this)
+			\EndIf
+			\State \Return thread
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+	\begin{algorithmic}
+    \Procedure {pickNextThread()}{}
+		\If{waitingQueue is not empty}
+			\State threadState $\leftarrow$ first element of waitingQueue
+			\For{each ThreadState ts in waitingQueue}
+				\If{ts has higher priority than threadState}
+					\State threadState $\leftarrow$ ts
+				\EndIf
+			\EndFor
+		\Else
+			\State thread $\leftarrow$ null
+		\EndIf
+		\State \Return thread
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+	\caption{ThreadState}
+	\begin{algorithmic}
+		\State $//$ once new thread enter, all the EP should change
+		\Procedure {change()}{}
+			\If{!changed}
+				\State changed $\leftarrow$ true
+				\State EP $\leftarrow$ getEP()
+				\For{each PriorityQueue pq in acquiredResource}
+					\If{pq.master != null $\&\&$ transferPriority}
+						\State pq.changed $\leftarrow$ true
+						\State pq.master.change()
+					\EndIf
+				\EndFor
+			\EndIf
+		\EndProcedure
+	\end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {getEP()}{}
+			\If{changed}
+				\State EP $\leftarrow$ priority
+				\For{each PriorityQueue pq in occupiedQueue}
+					\State EP $\leftarrow$ MAX(EP, pq.getMaxEP)
+				\EndFor
+			\EndIf
+			\State \Return EP
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+	\begin{algorithmic}
+    \Procedure {setPriority}{int Priority}
+			\If{priority != Priority}
+				\State priority $\leftarrow$ Priority
+				\State change()
+			\EndIf
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {waitForAccess}{PriorityQueue waitQueue}
+			\State Add waitQueue into acquiredResource
+			\If{waitQueue is in occupiedResource}
+				\State Remove waitQueue from occupiedResource
+				\State waitQueue.master $\leftarrow$ null
+			\EndIf
+			\If{waitQueue.master != null}
+				\State $//$ new thread wait hence EP should change
+				\If{transferPriority}
+					\State waitQueue.changed $\leftarrow$ true
+					\State waitQueue.master.change()
+				\EndIf
+			\EndIf
+		\EndProcedure
+  \end{algorithmic}
+	\begin{algorithmic}
+    \Procedure {acquire}{PriorityQueue waitQueue}
+			\State Add waitQueue into occupiedResource
+			\If{waitQueue is in acquiredResource}
+				\State Remove waitQueue from acquiredResource
+				\State waitQueue.master $\leftarrow$ this
+			\EndIf
+			\State change()
+		\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+\subsection{Testing Plan}
+\begin{enumerate}
+	\item Set up serveral threads with random priorities associated with one condition. And test whether they execute in decreasing order.
+	\item Set up serveral threads with random priorities associated with mutiple conditions. And test whether they execute in decreasing order. And
+		Test by printing that whether the waiting thread properly donate its priority and whether the quit-holding thread recover its priority.
+\end{enumerate}
+\section{Solution to \texttt{Boat} Problem}
+\subsection{Overview}
+
+Implement \texttt{Boat} class to solve the boat problem.
+
+\subsection{Correctness Constraints}
+
+\begin{enumerate}
+\item[$\bullet$] The boat can only hold one or two children or one adult.
+\item[$\bullet$] Each time the location of the boat changes, the number of passengers in boat cannot be zero.
+\item[$\bullet$] \texttt{begin} method finished with both of children and adults is on Molokai.
+\end{enumerate}
+
+\subsection{Declaration}
+
+\begin{enumerate}
+\item[$\bullet$] In \texttt{Boat} class, add \texttt{locationOfBoat}, \texttt{numOfChildOahu}, \texttt{numOfAdultOahu}, \texttt{numOfChildMolokai}, \texttt{numOfAdultMolokai}, \texttt{numOfChildBoat}, \texttt{boatLock}, \texttt{waitOnOahuCondition}, \texttt{waitBoardingCondition}, \texttt{waitOnMolokaiCondition}, and \texttt{message} a \texttt{Communicator}.
+\item[$bullet$] In \texttt{begin}, what we need to do is for each children and adults create a thread, and we also use message to see whether we have move all people to Molokai.
+\item[$bullet$] In \texttt{AdultItinerary}, the adult can  move to Molokai when the boat is at Oahu and empty with child on Molokai can't be zero. Then we move this adult to Molokai and wake waiting on Molokai.
+\item[$\bullet$] In \texttt{ChildItinerary}, add \texttt{location} to show the location of this child. For child move to Molokai, the condition is boat is at Oahu and empty or with one child, and also the child can't be himself. If the child is the first in the boat, then it wait for another to board. If the location of the boat is on Molokai, then it must have one child back to Oahu.
+\end{enumerate}
+
+\subsection{Description}
+
+\begin{algorithm}
+    \begin{algorithmic}
+    \Procedure{begin}{int adults, int children, BoatGrader b}
+        \State bg $\leftarrow$ b
+        \State for each adults, create a thread of \texttt{AdultItinerary}
+        \State for each childs, create a thread of \texttt{ChildItinerary}
+        \While{message.listen() is not the total of children and adults}
+        \EndWhile
+    \EndProcedure
+    \Procedure{AdultItinerary}{}
+        \State numOfAdultOahu++
+        \State boatLock.acquire()
+        \While{locationOfBoat is not Oahu or some other conditions} $//$ need more think
+            \If{locationOfBoat is on Oahu}
+                \State waitOnOahuCondition.wakeAll()
+            \EndIf
+            \State waitOnOahuCondition.sleep()
+        \EndWhile
+        
+        \State bg.AdultRowToMolokai()
+        \State numOfAdultOahu--, numOfAdultMolokai++
+        \State locationOfBoat is Molokai
+        \State message.speak(numOfAdultMolokai + numOfChildMolokai)
+        \State waitOnMolokaiCondition.wakeAll()
+        \State boat.release()        
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+    \begin{algorithmic}
+    \Procedure{ChildItinerary}{}
+        \State location is Oahu
+        \State numOfChildOahu++
+        \While{true}
+            \State boat.acquire()
+            \If{location is Oahu}
+                \While{locationOfBoat is not Oahu or other conditions} $//$ need more think
+                    \If{locationOfBoat is Oahu}
+                        \State waitOnOahuCondition.wakeAll()
+                    \EndIf
+                    \State waitOnOahuCondition.sleep()
+                \EndWhile
+                \State numOfChildBoat++
+                \If{numOfChildBoat == 1}
+                    \State waitOnOahuCondition.wakeAll()
+                    \State waitBoardingCondition.sleep()
+                    \State numOfChildOahu--
+                    \State bg.ChildRideToMolokai()
+                    \State location is Molokai
+                    \State numOfChildBoat $\leftarrow$ 0
+                    \State numOfChildMolokai++
+                    \State message.speak(numOfAdultMolokai + numOfChildMolokai)
+                    \State waitOnMolokaiCondition.wakeAll()
+                    \State waitOnMolokaiCondition.sleep()
+                \Else
+                    \State waitBoardingCondition.wake()
+                    \State numOfChildOahu--
+                    \State bg.ChildRowToMolokai()
+                    \State location is Molokai
+                    \State numOfChildMolokai++
+                    \State waitOnMolokaiCondition.sleep()
+                \EndIf
+            \Else
+                \While{locationOfBoat is not Molokai}
+                    \State waitOnMolokaiCondition.sleep()
+                \EndWhile
+                \State numOfChildMolokai--
+                \State bg.ChildRowToOahu()
+                \State location is Oahu
+                \State locationOfBoat is Oahu
+                \State numOfChildOahu++
+                \State waitOnOahuCondition.wakeAll()
+                \State waitOnOahuCondition.sleep()
+            \EndIf
+            \State boat.release()
+        \EndWhile
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Testing Plan}
+
+For this problem, the test is easy, just some examples with different numbers of adults or children.
+\end{document}
