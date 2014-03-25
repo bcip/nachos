@@ -2,6 +2,28 @@
 \usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{listings, xcolor}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true
+  tabsize=3
+}
+
 \title{Project 1 - Build a thread system for kernel processes}
 \author{Xie Yuanhang\\ 2011012344\and
 Kuang Zhonghong\\ 2011012357\and
@@ -61,16 +83,100 @@ Shown in pseudocode.
 		\EndProcedure
   \end{algorithmic}
 \end{algorithm}
-\subsection{Testing Plan}
-Using \texttt{selfTest()} method in \texttt{KThread},
+\subsection{Test}
+Using \texttt{selfTest()} method in \texttt{KThread}, the main thought is making some \texttt{join} example, so we have those tests below.
+\begin{lstlisting}[language=java]
+	private static void test1(){
+		//Test Case 1
+		System.out.println("\n*** Test Case 1 for join ***");
+		ToJoin toJoin = new ToJoin();
+		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
+		KThread toBeJoinedThread = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined Thread");
+		toBeJoinedThread.fork();
+		toJoinThread.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
+	}
+	private static void test2(){
+		//Test Case 2
+		System.out.println("\n*** Test Case 2 for join ***");
+		ToJoin toJoin = new ToJoin();
+		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
+		KThread toBeJoinedThread = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined Thread");
+		toJoinThread.fork();
+		toBeJoinedThread.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
+	}
+	private static void test3(){
+		//Test Case 3
+		System.out.println("\n*** Test Case 3 for join ***");
+		ToJoin toJoin = new ToJoin();
+		KThread toJoinThread = new KThread(toJoin).setName("ToJoin Thread");
+		KThread toBeJoined1 = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined1 Thread");
+		KThread toBeJoined2 = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined2 Thread");
+		toBeJoined1.fork();
+		toBeJoined2.fork();
+		toJoinThread.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
+	}
+	private static void test4(){
+		//Test Case 4
+		System.out.println("\n*** Test Case 4 for join ***");
+		ToJoin toJoin1 = new ToJoin();
+		ToJoin toJoin2 = new ToJoin();
+		KThread t1 = new KThread(toJoin1).setName("ToJoin Thread 1");
+		KThread t2 = new KThread(toJoin2).setName("ToJoin Thread 2");
+		KThread toBeJoined = new KThread(new ToBeJoinedCouple(t1,t2)).setName("ToBeJoined Thread");
+		toBeJoined.fork();
+		t1.fork();
+		t2.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
+	}
+\end{lstlisting}
+And the results of tests are as follows.
+\begin{lstlisting}
+*** Test Case 1 for join ***
+* ToBeJoined starts running
+* ToJoin joins
+* ToJoin starts running
+* ToJoin ends running
+* ToBeJoined continues running after ToJoin Thread finishes
+
+*** Test Case 2 for join ***
+* ToJoin starts running
+* ToJoin ends running
+* ToBeJoined starts running
+* ToJoin joins
+* ToBeJoined continues running after ToJoin Thread finishes
+
+*** Test Case 3 for join ***
+* ToBeJoined starts running
+* ToJoin joins
+* ToBeJoined starts running
+* ToJoin joins
+* ToJoin starts running
+* ToJoin ends running
+* ToBeJoined continues running after ToJoin Thread finishes
+* ToBeJoined continues running after ToJoin Thread finishes
+
+*** Test Case 4 for join ***
+* ToBeJoinedCouple starts running
+* ToJoin Thread 1 joins
+* ToJoin starts running
+* ToJoin ends running
+* ToJoin starts running
+* ToJoin ends running
+* ToJoin Thread 2 joins
+* ToBeJoinedCouple continues running after two joining threads
+\end{lstlisting}
+
 \begin{enumerate}
-	\item Let Thread A, B, C each prints out some statements.
-	\item Thread A join Thread B
-	\item Thread A join Thread B multiple times
-	\item Thread A join itself
-	\item Thread A which is finished join Thread B
-	\item Test a series of threads. Thread C joins Thread B, Thread B joins Thread A.
+\item For \texttt{test1}, we have the thread being joined run first, and have the other thread join the former run later;
+\item For \texttt{test2}, just change the running order of the threads in the first test;
+\item For \texttt{test3}, we have a thread join two different threads;
+\item For \texttt{test4}, we have a thread be joined by two different threads;
 \end{enumerate}
+
+And all the results shows that the joining thread finished before the threads being joined continue which is the expected results.
 \section{Implementation of \texttt{Condition2}}
 \subsection{Overview}
 Implement \texttt{Condition2} without using semaphore and \texttt{Condition2} must be equivalent implementation as \texttt{Condition}.
@@ -134,14 +240,141 @@ Implement \texttt{Condition2} without using semaphore and \texttt{Condition2} mu
 		\EndProcedure
   \end{algorithmic}
 \end{algorithm}
-\subsection{Testing Plan}
+\subsection{Test}
 Using \texttt{selfTest()} in \texttt{Condition2},
-\begin{enumerate}
-	\item Sleep many threads on one condition and then \texttt{wake} one thread and verify by printing
-	\item Sleep many threads on one condition and then \texttt{wakeAll} threads and verify by printing
-	\item Sleep many threads on serveral conditions and then \texttt{wakeAll} threads of one condition and
-		verify only threads associated by that condition wake by printing
-\end{enumerate}
+
+In this session, the test is using \texttt{Condition} and \texttt{Condition2} to do the same job, and compare their results, and then we finish the test. Here are the codes.
+\begin{lstlisting}
+	private static class Int {
+		int value;
+		Int(int _value){
+			value = _value;
+		}
+		public void inc(){
+			value++;
+		}
+		public void dec(){
+			value--;
+		}
+		public int val(){
+			return value;
+		}
+	}
+	private static class Producer implements Runnable {
+		private Int goods;
+		private Condition2 condition;
+		private Lock lock;
+		private int index;
+		
+		Producer(int _index, Int _goods, Condition2 _condition, Lock _lock){
+			index = _index;
+			goods = _goods;
+			condition = _condition;
+			lock = _lock;
+		}
+		
+		public void run() {
+			lock.acquire();
+			System.out.println("Producer " + index + " starts running");
+			goods.inc();
+			System.out.println("Producer " + index + " produces 1 item (" + goods.val() + " items)");
+			condition.wakeAll();
+			System.out.println("Producer " + index + " ends running");
+			lock.release();
+		}
+	}
+	private static class Consumer implements Runnable {
+		private Int goods;
+		private Condition2 condition;
+		private Lock lock;
+		private int index;
+		
+		Consumer(int _index, Int _goods, Condition2 _condition, Lock _lock) {
+			index = _index;
+			goods = _goods;
+			condition = _condition;
+			lock = _lock;
+		}
+		
+		public void run() {
+			lock.acquire();
+			System.out.println("Consumer " + index + " starts running");
+			while(goods.val() < 1){
+				System.out.println("Consumer " + index + " sleeps " + "(" + goods.val() + " items)");
+				condition.sleep();
+			}
+			goods.dec();
+			System.out.println("Consumer " + index + " consumes " + "" + 1 + " item (" + goods.val() + " items)");
+			System.out.println("Consumer " + index + " ends running");
+			lock.release();
+		}
+	}
+public static void selfTest(){
+	Int goods = new Int(0);
+	Lock lock = new Lock();
+	Condition2 condition = new Condition2(lock);
+	KThread consumer1 = new KThread(new Consumer(1, goods, condition, lock));
+	KThread consumer2 = new KThread(new Consumer(2, goods, condition, lock));
+	KThread producer1 = new KThread(new Producer(1, goods, condition, lock));
+	KThread producer2 = new KThread(new Producer(2, goods, condition, lock));
+	KThread producer3 = new KThread(new Producer(3, goods, condition, lock));
+	KThread consumer3 = new KThread(new Consumer(3, goods, condition, lock));
+	consumer1.fork();
+	consumer2.fork();
+	producer1.fork();
+	producer2.fork();
+	producer3.fork();
+	consumer3.fork();
+	ThreadedKernel.alarm.waitUntil(100000);
+}
+\end{lstlisting}
+And for \texttt{Condition}, we just change the test code above. And here are the results.
+\begin{lstlisting}
+using condition2:
+Consumer 1 starts running
+Consumer 1 sleeps (0 items)
+Consumer 2 starts running
+Consumer 2 sleeps (0 items)
+Producer 1 starts running
+Producer 1 produces 1 item (1 items)
+Producer 1 ends running
+Producer 2 starts running
+Producer 2 produces 1 item (2 items)
+Producer 2 ends running
+Producer 3 starts running
+Producer 3 produces 1 item (3 items)
+Producer 3 ends running
+Consumer 3 starts running
+Consumer 3 consumes 1 item (2 items)
+Consumer 3 ends running
+Consumer 1 consumes 1 item (1 items)
+Consumer 1 ends running
+Consumer 2 consumes 1 item (0 items)
+Consumer 2 ends running
+
+using condition:
+Consumer 1 starts running
+Consumer 1 sleeps (0 items)
+Consumer 2 starts running
+Consumer 2 sleeps (0 items)
+Producer 1 starts running
+Producer 1 produces 1 item (1 items)
+Producer 1 ends running
+Producer 2 starts running
+Producer 2 produces 1 item (2 items)
+Producer 2 ends running
+Producer 3 starts running
+Producer 3 produces 1 item (3 items)
+Producer 3 ends running
+Consumer 3 starts running
+Consumer 3 consumes 1 item (2 items)
+Consumer 3 ends running
+Consumer 1 consumes 1 item (1 items)
+Consumer 1 ends running
+Consumer 2 consumes 1 item (0 items)
+Consumer 2 ends running
+\end{lstlisting}
+In this test result, \texttt{Consumer} waits for \texttt{Producer} rightly when there is no good and \texttt{Consumer}, \texttt{Producer} consumes and produces good rightly. And \texttt{Condition2} works the same as \texttt{Condition}.
 \section{Implementation of \texttt{Alarm}}
 \subsection{Overview}
 Implementation of \texttt{Alarm} class, such that after the thread called \texttt{waitUtill(x)} at time \texttt{t} then \texttt{timerInterrupt} 
@@ -180,9 +413,56 @@ Add a new instance variable \texttt{waitQueue} of \texttt{WaitThread} which is a
 		\EndProcedure
   \end{algorithmic}
 \end{algorithm}
- \subsection{Testing Plan}
+ \subsection{Test}
  Call \texttt{waitUtill} by several threads and print the calling time and the wake time. Find out whether the threads are waken after wake time. 
- Note that \texttt{x} should be valid value.
+ 
+ So the codes are as follows.
+ \begin{lstlisting}
+public static void selfTest(){
+	KThread[] t = new KThread[10];
+	for(int i = 0; i < 10; i++){
+		t[i] = new KThread(new AlarmTest((long)((i+1) * 100)));
+		t[i].fork();
+	}
+	ThreadedKernel.alarm.waitUntil(100000);
+}
+ \end{lstlisting}
+ 
+ And the result is as follows.
+\begin{lstlisting}
+Thread starts at 120
+Thread calls waitUtill with delay 100
+Thread starts at 130
+Thread calls waitUtill with delay 200
+Thread starts at 140
+Thread calls waitUtill with delay 300
+Thread starts at 150
+Thread calls waitUtill with delay 400
+Thread starts at 160
+Thread calls waitUtill with delay 500
+Thread starts at 170
+Thread calls waitUtill with delay 600
+Thread starts at 180
+Thread calls waitUtill with delay 700
+Thread starts at 190
+Thread calls waitUtill with delay 800
+Thread starts at 200
+Thread calls waitUtill with delay 900
+Thread starts at 210
+Thread calls waitUtill with delay 1000
+Thread recovers at 500 (500>=120+100)
+Thread recovers at 510 (510>=130+200)
+Thread recovers at 520 (520>=140+300)
+Thread recovers at 1030 (1030>=150+400)
+Thread recovers at 1040 (1040>=160+500)
+Thread recovers at 1050 (1050>=170+600)
+Thread recovers at 1060 (1060>=180+700)
+Thread recovers at 1070 (1070>=190+800)
+Thread recovers at 1540 (1540>=200+900)
+Thread recovers at 1550 (1550>=210+1000)
+\end{lstlisting}
+
+And the test accurately meet the needs, since all threads continues after the delay time.
 \section{Implementation of \texttt{Communicator}}
 \subsection{Overview}
 Implementat \texttt{Communicator} class. Two methods \texttt{speak} and \texttt{listener} to implement. The message is passed from exactly one 
@@ -274,11 +554,89 @@ speaker to exactly one listener.
 		\EndProcedure
   \end{algorithmic}
 \end{algorithm}
-\subsection{Testing Plan}
-\begin{enumerate}
-	\item Test a senquence of speakers and listeners in different orders and check the output.
-	\item Set up a random number of speakers and listeners and test whether the communication message will be lost.
-\end{enumerate}
+\subsection{Test}
+Test a senquence of speakers and listeners in different orders and check the output.
+
+And the test code as follows.
+\begin{lstlisting}
+public static void selfTest() {
+	Communicator com = new Communicator();
+	/* case 1 
+	(new KThread(new Listener(1, com))).fork();
+	(new KThread(new Listener(2, com))).fork();
+	(new KThread(new Speaker(1, com, 1))).fork();
+	(new KThread(new Speaker(2, com, 2))).fork();
+	(new KThread(new Speaker(3, com, 3))).fork();
+	(new KThread(new Listener(3, com))).fork();
+	*/
+	///* case 2
+	for(int i = 1; i < 6; i++){
+		(new KThread(new Listener(i, com))).fork();
+	}
+	for(int i = 5; i > 0; i--){
+		(new KThread(new Speaker(i, com, i))).fork();	
+	}
+	//*/
+	ThreadedKernel.alarm.waitUntil(100000);
+}
+\end{lstlisting}
+
+And the results is as follows.
+\begin{lstlisting}
+case 1
+Listener 1 starts listening
+Listener 2 starts listening
+Speaker 1 starts speaking
+Speaker 1 speaks 1
+Speaker 1 ends speaking
+Speaker 2 starts speaking
+Speaker 3 starts speaking
+Listener 3 starts listening
+Listener 1 hears 1 from speaker 1
+Listener 1 ends listening
+Speaker 2 speaks 2
+Speaker 2 ends speaking
+Listener 2 hears 2 from speaker 2
+Listener 2 ends listening
+Speaker 3 speaks 3
+Speaker 3 ends speaking
+Listener 3 hears 3 from speaker 3
+Listener 3 ends listening
+
+case 2
+Listener 1 starts listening
+Listener 2 starts listening
+Listener 3 starts listening
+Listener 4 starts listening
+Listener 5 starts listening
+Speaker 5 starts speaking
+Speaker 5 speaks 5
+Speaker 5 ends speaking
+Speaker 4 starts speaking
+Speaker 3 starts speaking
+Speaker 2 starts speaking
+Speaker 1 starts speaking
+Listener 1 hears 5 from speaker 5
+Listener 1 ends listening
+Speaker 4 speaks 4
+Speaker 4 ends speaking
+Listener 2 hears 4 from speaker 4
+Listener 2 ends listening
+Listener 3 hears 3 from speaker 3
+Listener 3 ends listening
+Speaker 3 speaks 3
+Speaker 3 ends speaking
+Speaker 2 speaks 2
+Speaker 2 ends speaking
+Listener 4 hears 2 from speaker 2
+Listener 4 ends listening
+Speaker 1 speaks 1
+Speaker 1 ends speaking
+Listener 5 hears 1 from speaker 1
+Listener 5 ends listening
+\end{lstlisting}
+
+And According the results, each \texttt{Listener} listens to exactly one \texttt{Speaker} and each \texttt{Speaker} speaks to exactly one \texttt{Listener} which meets the requirements.
 \section{Implementation of \texttt{PriorityScheduler}}
 \subsection{Overview}
 Implement \texttt{PriorityScheduler} class so that the scheduler can properly schedule the threads by its priority and by priority donation 
@@ -460,26 +818,25 @@ Implement \texttt{Boat} class to solve the boat problem.
 
 \begin{enumerate}
 \item[$\bullet$] In \texttt{Boat} class, add \texttt{locationOfBoat}, \texttt{numOfChildOahu}, \texttt{numOfAdultOahu}, \texttt{numOfChildMolokai}, \texttt{numOfAdultMolokai}, \texttt{numOfChildBoat}, \texttt{boatLock}, \texttt{waitOnOahuCondition}, \texttt{waitBoardingCondition}, \texttt{waitOnMolokaiCondition}, and \texttt{message} a \texttt{Communicator}.
-\item[$bullet$] In \texttt{begin}, what we need to do is for each children and adults create a thread, and we also use message to see whether we have move all people to Molokai.
-\item[$bullet$] In \texttt{AdultItinerary}, the adult can  move to Molokai when the boat is at Oahu and empty with child on Molokai can't be zero. Then we move this adult to Molokai and wake waiting on Molokai.
+\item[$\bullet$] In \texttt{begin}, what we need to do is for each children and adults create a thread, and we also use message to see whether we have move all people to Molokai.
+\item[$\bullet$] In \texttt{AdultItinerary}, the adult can  move to Molokai when the boat is at Oahu and empty with child on Molokai can't be zero. Then we move this adult to Molokai and wake waiting on Molokai.
 \item[$\bullet$] In \texttt{ChildItinerary}, add \texttt{location} to show the location of this child. For child move to Molokai, the condition is boat is at Oahu and empty or with one child, and also the child can't be himself. If the child is the first in the boat, then it wait for another to board. If the location of the boat is on Molokai, then it must have one child back to Oahu.
 \end{enumerate}
 
 \subsection{Description}
-
 \begin{algorithm}
     \begin{algorithmic}
     \Procedure{begin}{int adults, int children, BoatGrader b}
         \State bg $\leftarrow$ b
-        \State for each adults, create a thread of \texttt{AdultItinerary}
         \State for each childs, create a thread of \texttt{ChildItinerary}
+        \State for each adults, create a thread of \texttt{AdultItinerary}
         \While{message.listen() is not the total of children and adults}
         \EndWhile
     \EndProcedure
     \Procedure{AdultItinerary}{}
         \State numOfAdultOahu++
         \State boatLock.acquire()
-        \While{locationOfBoat is not Oahu or some other conditions} $//$ need more think
+        \While{locationOfBoat is not Oahu or numOfChildBoat > 0 or numOfChildOahu > 1}
             \If{locationOfBoat is on Oahu}
                 \State waitOnOahuCondition.wakeAll()
             \EndIf
@@ -503,7 +860,7 @@ Implement \texttt{Boat} class to solve the boat problem.
         \While{true}
             \State boat.acquire()
             \If{location is Oahu}
-                \While{locationOfBoat is not Oahu or other conditions} $//$ need more think
+                \While{locationOfBoat is not Oahu or numOfChildBoat is 2 or numOfChildOahu is 1}
                     \If{locationOfBoat is Oahu}
                         \State waitOnOahuCondition.wakeAll()
                     \EndIf
@@ -547,7 +904,48 @@ Implement \texttt{Boat} class to solve the boat problem.
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{Testing Plan}
+\subsection{Test}
+\begin{lstlisting}[language=java]
+	public static void selfTest() {
+		BoatGrader b = new BoatGrader();
 
-For this problem, the test is easy, just some examples with different numbers of adults or children.
+		begin(4, 3, b);
+	}
+\end{lstlisting}
+We test the case start with 4 adults and 3 childs and here is the result:
+\begin{lstlisting}
+A child has forked.
+A child has forked.
+A child has forked.
+An adult as forked.
+An adult as forked.
+An adult as forked.
+An adult as forked.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+\end{lstlisting}
+As we can easily check, the question is solved properly.
 \end{document}
