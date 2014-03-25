@@ -595,13 +595,133 @@ public class PriorityScheduler extends Scheduler {
 
 		System.out.println("PriorityScheduler.test5() ends.");
 	}
+	private static class Competitor implements Runnable {
+		private int index;
+		private Communicator pubCom;
+		private Communicator priCom;
+		
+		Competitor(int _index, Communicator _pubCom, Communicator _priCom) {
+			index = _index;
+			pubCom = _pubCom;
+			priCom = _priCom;
+		}
+		
+		public void run() {
+			if(pubCom.listen() > 0)
+				priCom.speak(index);
+		}
+	}
+	private static class Referee implements Runnable {
+		private int capacity;
+		private Communicator pubCom;
+		private Communicator priCom;
+		
+		Referee(int _capacity, Communicator _pubCom, Communicator _priCom){
+			capacity = _capacity;
+			pubCom = _pubCom;
+			priCom = _priCom;
+		}
+		
+		public void run() {
+			while(capacity>0){
+				pubCom.speak(capacity);
+				int temp = priCom.listen();
+				for(int i = 0; i < 5; i++){
+					System.out.println("Competitor " + temp + " loop " + i);
+				}
+				capacity--;
+			}
+		}
+	}
+	private static void test6() {
+		Communicator pubCom = new Communicator();
+		Communicator priCom = new Communicator();
+		int capacity = 7;
+		KThread[] competitors = new KThread[10];
+		for(int i = 0; i < capacity; i++){
+			competitors[i] = new KThread(new Competitor(i, pubCom, priCom));
+		}
+		KThread referee = new KThread(new Referee(capacity, pubCom, priCom));
+		boolean intStatus = Machine.interrupt().disable();
+		for(int i = 0; i < capacity; i++){
+			int priority = (int)(Math.random()*7);
+			ThreadedKernel.scheduler.setPriority(competitors[i], priority);
+			System.out.println("Competitor " + i + " with priority " + priority);
+		}
+		for(int i = 0; i < capacity; i++)
+			competitors[i].fork();
+		referee.fork();
+		for(int i = 0; i < capacity; i++)
+			competitors[i].join();
+		referee.join();
+		Machine.interrupt().restore(intStatus);
+	}
+	private static class Joiner implements Runnable {
+		int length;
+		String name;
+		Joiner(int _length, String _name){
+			length = _length;
+			name = _name;
+		}
+		public void run(){
+			for(int i = 0; i < length; i++)
+				System.out.println(name + " loop " + i);
+		}
+	}
+	private static class Joinee implements Runnable {
+		private KThread joiner;
+		int length;
+		String name;
+		Joinee(int _length, String _name, KThread _joiner){
+			length = _length;
+			joiner = _joiner;
+			name = _name;
+		}
+		public void run(){
+			joiner.join();
+			for(int i = 0; i < length; i++)
+				System.out.println(name + " loop " + i);
+		}
+	}
+	private static void test7() {
+		KThread threadO = new KThread(new Joiner(2, "threadO"));
+		KThread threadL = new KThread(new Joinee(2, "threadL", threadO));
+		KThread threadM = new KThread(new Joinee(10, "threadM", threadO));
+		KThread threadH = new KThread(new Joinee(2, "threadH", threadL));
+		
+		threadH.setName("threadH");
+		threadM.setName("threadM");
+		threadL.setName("threadL");
+		threadO.setName("threadO");
 
+		boolean intStatus = Machine.interrupt().disable();
+		
+		ThreadedKernel.scheduler.setPriority(threadO, 7);
+		ThreadedKernel.scheduler.setPriority(threadH, 7);
+		ThreadedKernel.scheduler.setPriority(threadM, 4);
+		ThreadedKernel.scheduler.setPriority(threadL, 1);
+		
+		threadO.fork();
+		threadO.join();
+		
+		threadM.fork();
+		threadL.fork();
+		threadM.join();
+		threadL.join();
+		threadH.fork();
+		threadH.join();
+		
+		Machine.interrupt().restore(intStatus);
+	}
+	
 	public static void selfTest() {
-		test1();
+		/*test1();
 		test2();
 		test3();
 		test4();
 		test5();
+		test6();*/
+		test7();
 	}
 
 	private static class PSTest implements Runnable {
