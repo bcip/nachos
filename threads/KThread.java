@@ -166,7 +166,7 @@ public class KThread {
 
 		ready();
 		
-		readyQueue.print();
+		//readyQueue.print();
 
 		Machine.interrupt().restore(intStatus);
 	}
@@ -299,7 +299,7 @@ public class KThread {
 
 		if (this.status != statusFinished) {
 			this.joinedThreadQueue.waitForAccess(currentThread);
-			readyQueue.print();
+			//readyQueue.print();
 			sleep();
 		}
 
