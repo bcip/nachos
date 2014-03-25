@@ -5,3 +5,4 @@
 
 /report/**
 !/report/**/*.tex
+!/report/**/*.txt
