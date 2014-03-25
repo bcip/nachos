@@ -1,8 +1,12 @@
+*.aux
+*.log
+*.pdf
+*.gz
+*.toc
+*.*~
 *.class
+!*.tex
+!*.txt
 
 /proj1
 /proj2
-
-/report/project1
-!/report/project1/*.tex
-!/report/project1/*.txt

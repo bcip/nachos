@@ -1,0 +1,33 @@
+*** Test Case 1 for join ***
+* ToBeJoined starts running
+* ToJoin joins
+* ToJoin starts running
+* ToJoin ends running
+* ToBeJoined continues running after ToJoin Thread finishes
+
+*** Test Case 2 for join ***
+* ToJoin starts running
+* ToJoin ends running
+* ToBeJoined starts running
+* ToJoin joins
+* ToBeJoined continues running after ToJoin Thread finishes
+
+*** Test Case 3 for join ***
+* ToBeJoined starts running
+* ToJoin joins
+* ToBeJoined starts running
+* ToJoin joins
+* ToJoin starts running
+* ToJoin ends running
+* ToBeJoined continues running after ToJoin Thread finishes
+* ToBeJoined continues running after ToJoin Thread finishes
+
+*** Test Case 4 for join ***
+* ToBeJoinedCouple starts running
+* ToJoin Thread 1 joins
+* ToJoin starts running
+* ToJoin ends running
+* ToJoin starts running
+* ToJoin ends running
+* ToJoin Thread 2 joins
+* ToBeJoinedCouple continues running after two joining threads

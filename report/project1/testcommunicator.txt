@@ -1,0 +1,51 @@
+case 1
+Listener 1 starts listening
+Listener 2 starts listening
+Speaker 1 starts speaking
+Speaker 1 speaks 1
+Speaker 1 ends speaking
+Speaker 2 starts speaking
+Speaker 3 starts speaking
+Listener 3 starts listening
+Listener 1 hears 1 from speaker 1
+Listener 1 ends listening
+Speaker 2 speaks 2
+Speaker 2 ends speaking
+Listener 2 hears 2 from speaker 2
+Listener 2 ends listening
+Speaker 3 speaks 3
+Speaker 3 ends speaking
+Listener 3 hears 3 from speaker 3
+Listener 3 ends listening
+
+case 2
+Listener 1 starts listening
+Listener 2 starts listening
+Listener 3 starts listening
+Listener 4 starts listening
+Listener 5 starts listening
+Speaker 5 starts speaking
+Speaker 5 speaks 5
+Speaker 5 ends speaking
+Speaker 4 starts speaking
+Speaker 3 starts speaking
+Speaker 2 starts speaking
+Speaker 1 starts speaking
+Listener 1 hears 5 from speaker 5
+Listener 1 ends listening
+Speaker 4 speaks 4
+Speaker 4 ends speaking
+Listener 2 hears 4 from speaker 4
+Listener 2 ends listening
+Listener 3 hears 3 from speaker 3
+Listener 3 ends listening
+Speaker 3 speaks 3
+Speaker 3 ends speaking
+Speaker 2 speaks 2
+Speaker 2 ends speaking
+Listener 4 hears 2 from speaker 2
+Listener 4 ends listening
+Speaker 1 speaks 1
+Speaker 1 ends speaking
+Listener 5 hears 1 from speaker 1
+Listener 5 ends listening

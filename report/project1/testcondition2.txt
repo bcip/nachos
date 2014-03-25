@@ -1,0 +1,43 @@
+using condition2:
+Consumer 1 starts running
+Consumer 1 sleeps (0 items)
+Consumer 2 starts running
+Consumer 2 sleeps (0 items)
+Producer 1 starts running
+Producer 1 produces 1 item (1 items)
+Producer 1 ends running
+Producer 2 starts running
+Producer 2 produces 1 item (2 items)
+Producer 2 ends running
+Producer 3 starts running
+Producer 3 produces 1 item (3 items)
+Producer 3 ends running
+Consumer 3 starts running
+Consumer 3 consumes 1 item (2 items)
+Consumer 3 ends running
+Consumer 1 consumes 1 item (1 items)
+Consumer 1 ends running
+Consumer 2 consumes 1 item (0 items)
+Consumer 2 ends running
+
+using condition:
+Consumer 1 starts running
+Consumer 1 sleeps (0 items)
+Consumer 2 starts running
+Consumer 2 sleeps (0 items)
+Producer 1 starts running
+Producer 1 produces 1 item (1 items)
+Producer 1 ends running
+Producer 2 starts running
+Producer 2 produces 1 item (2 items)
+Producer 2 ends running
+Producer 3 starts running
+Producer 3 produces 1 item (3 items)
+Producer 3 ends running
+Consumer 3 starts running
+Consumer 3 consumes 1 item (2 items)
+Consumer 3 ends running
+Consumer 1 consumes 1 item (1 items)
+Consumer 1 ends running
+Consumer 2 consumes 1 item (0 items)
+Consumer 2 ends running
