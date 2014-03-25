@@ -528,7 +528,7 @@ public class PriorityScheduler extends Scheduler {
 	public static void selfTest() {
 		test1();
 		test2();
-		test3();
+		//test3();
 	}
 
 	private static class PSTest implements Runnable {
