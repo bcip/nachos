@@ -3,5 +3,5 @@
 /proj1
 /proj2
 
-/report/*/**
-!/report/*/*.tex
+/report/**
+!/report/**/*.tex
