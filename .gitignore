@@ -3,6 +3,6 @@
 /proj1
 /proj2
 
-/report/**
-!/report/**/*.tex
-!/report/**/*.txt
+/report/project1
+!/report/project1/*.tex
+!/report/project1/*.txt
