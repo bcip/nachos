@@ -475,6 +475,7 @@ public class KThread {
 		KThread toBeJoinedThread = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined Thread");
 		toBeJoinedThread.fork();
 		toJoinThread.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	private static void test2(){
 		//Test Case 2
@@ -484,6 +485,7 @@ public class KThread {
 		KThread toBeJoinedThread = new KThread(new ToBeJoined(toJoinThread)).setName("ToBeJoined Thread");
 		toJoinThread.fork();
 		toBeJoinedThread.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	private static void test3(){
 		//Test Case 3
@@ -495,6 +497,7 @@ public class KThread {
 		toBeJoined1.fork();
 		toBeJoined2.fork();
 		toJoinThread.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	private static void test4(){
 		//Test Case 4
@@ -507,18 +510,19 @@ public class KThread {
 		toBeJoined.fork();
 		t1.fork();
 		t2.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	/**
 	 * Tests whether this module is working.
 	 */
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
-
+/*
 		KThread forked = new KThread(new PingTest(1)).setName("forked thread");
 		forked.fork();
 		new PingTest(0).run();
 		forked.join();	
-		
+*/		
 		test4();
 	}
 

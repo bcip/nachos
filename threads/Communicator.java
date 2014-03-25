@@ -112,8 +112,10 @@ public class Communicator {
 			message = _message;
 		}
 		public void run() {
-			System.out.println("Speaker " + index + " speaks "+ message);
+			System.out.println("Speaker " + index + " starts speaking");
 			com.speak(message);
+			System.out.println("Speaker " + index + " speaks "+ message);
+			System.out.println("Speaker " + index + " ends speaking");
 		}
 	}
 	private static class Listener implements Runnable {
@@ -124,8 +126,10 @@ public class Communicator {
 			com = _com;
 		}
 		public void run() {
+			System.out.println("Listener " + index + " starts listening");
 			int temp = com.listen();
 			System.out.println("Listener " + index + " hears " + temp + " from speaker "+ temp);
+			System.out.println("Listener " + index + " ends listening");
 		}
 	}
 	/**
@@ -133,20 +137,22 @@ public class Communicator {
 	 */
 	public static void selfTest() {
 		Communicator com = new Communicator();
+		/* case 1 
 		(new KThread(new Listener(1, com))).fork();
 		(new KThread(new Listener(2, com))).fork();
 		(new KThread(new Speaker(1, com, 1))).fork();
 		(new KThread(new Speaker(2, com, 2))).fork();
 		(new KThread(new Speaker(3, com, 3))).fork();
 		(new KThread(new Listener(3, com))).fork();
-		/*
-		for(int i = 1; i < 3; i++){
+		*/
+		///* case 2
+		for(int i = 1; i < 6; i++){
 			(new KThread(new Listener(i, com))).fork();
 		}
-		for(int i = 1; i < 3; i++){
+		for(int i = 5; i > 0; i--){
 			(new KThread(new Speaker(i, com, i))).fork();	
 		}
-		*/
+		//*/
 		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	

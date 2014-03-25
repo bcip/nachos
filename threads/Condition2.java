@@ -104,8 +104,10 @@ public class Condition2 {
 		private Int goods;
 		private Condition2 condition;
 		private Lock lock;
+		private int index;
 		
-		Producer(Int _goods, Condition2 _condition, Lock _lock){
+		Producer(int _index, Int _goods, Condition2 _condition, Lock _lock){
+			index = _index;
 			goods = _goods;
 			condition = _condition;
 			lock = _lock;
@@ -113,9 +115,11 @@ public class Condition2 {
 		
 		public void run() {
 			lock.acquire();
+			System.out.println("Producer " + index + " starts running");
 			goods.inc();
-			System.out.println("Producer produces 1 item (" + goods.val() + " items)");
+			System.out.println("Producer " + index + " produces 1 item (" + goods.val() + " items)");
 			condition.wakeAll();
+			System.out.println("Producer " + index + " ends running");
 			lock.release();
 		}
 	}
@@ -123,8 +127,10 @@ public class Condition2 {
 		private Int goods;
 		private Condition2 condition;
 		private Lock lock;
+		private int index;
 		
-		Consumer(Int _goods, Condition2 _condition, Lock _lock) {
+		Consumer(int _index, Int _goods, Condition2 _condition, Lock _lock) {
+			index = _index;
 			goods = _goods;
 			condition = _condition;
 			lock = _lock;
@@ -132,12 +138,14 @@ public class Condition2 {
 		
 		public void run() {
 			lock.acquire();
+			System.out.println("Consumer " + index + " starts running");
 			while(goods.val() < 1){
-				System.out.println("Consumer sleeps " + "(" + goods.val() + " items)");
+				System.out.println("Consumer " + index + " sleeps " + "(" + goods.val() + " items)");
 				condition.sleep();
 			}
 			goods.dec();
-			System.out.println("Consumer consumes " + "" + 1 + " item (" + goods.val() + " items)");
+			System.out.println("Consumer " + index + " consumes " + "" + 1 + " item (" + goods.val() + " items)");
+			System.out.println("Consumer " + index + " ends running");
 			lock.release();
 		}
 	}
@@ -146,12 +154,19 @@ public class Condition2 {
 		Int goods = new Int(0);
 		Lock lock = new Lock();
 		Condition2 condition = new Condition2(lock);
-		KThread producer1 = new KThread(new Producer(goods, condition, lock));
-		KThread consumer1 = new KThread(new Consumer(goods, condition, lock));
-		KThread consumer2 = new KThread(new Consumer(goods, condition, lock));
+		KThread consumer1 = new KThread(new Consumer(1, goods, condition, lock));
+		KThread consumer2 = new KThread(new Consumer(2, goods, condition, lock));
+		KThread producer1 = new KThread(new Producer(1, goods, condition, lock));
+		KThread producer2 = new KThread(new Producer(2, goods, condition, lock));
+		KThread producer3 = new KThread(new Producer(3, goods, condition, lock));
+		KThread consumer3 = new KThread(new Consumer(3, goods, condition, lock));
 		consumer1.fork();
 		consumer2.fork();
 		producer1.fork();
+		producer2.fork();
+		producer3.fork();
+		consumer3.fork();
+		ThreadedKernel.alarm.waitUntil(100000);
 	}
 	
 	private Lock conditionLock;
