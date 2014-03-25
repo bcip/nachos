@@ -3,23 +3,6 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{listings, xcolor}
-%\lstset{%numbers=left, %设置行号位置
-%        %numberstyle=\tiny, %设置行号大小
-%        keywordstyle=\color{blue}, %设置关键字颜色
-%        commentstyle=\color[cmyk]{1,0,1,0}, %设置注释颜色
-%        frame=single, %设置边框格式
-%        escapeinside=``, %逃逸字符(1左面的键)，用于显示中文
-%        breaklines, %自动折行
-%        extendedchars=false, %解决代码跨页时，章节标题，页眉等汉字不显示的问题
-%        xleftmargin=1em,xrightmargin=2em, aboveskip=1em, %设置边距
-%        tabsize=4, %设置tab空格数
-%        showspaces=false %不显示空格
-%       }
-%\lstset{numbers=left, language=Java, 
-%numberstyle=\tiny, 
-%keywordstyle=\color{blue!70}, commentstyle=\color{red!50!green!50!blue!50}, 
-%frame=shadowbox, 
-%rulesepcolor=\color{red!20!green!20!blue!20},escapeinside=“, xleftmargin=2em,xrightmargin=2em, aboveskip=1em, breaklines}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -101,7 +84,7 @@ Shown in pseudocode.
   \end{algorithmic}
 \end{algorithm}
 \subsection{Test}
-Using \texttt{selfTest()} method in \texttt{KThread}, the main thought is making some \texttt{join} example, so we have those test below.
+Using \texttt{selfTest()} method in \texttt{KThread}, the main thought is making some \texttt{join} example, so we have those tests below.
 \begin{lstlisting}[language=java]
 	private static void test1(){
 		//Test Case 1
@@ -149,7 +132,7 @@ Using \texttt{selfTest()} method in \texttt{KThread}, the main thought is making
 		ThreadedKernel.alarm.waitUntil(100000);
 	}
 \end{lstlisting}
-And the result of such test is as bellow.
+And the results of tests are as follows.
 \begin{lstlisting}
 *** Test Case 1 for join ***
 * ToBeJoined starts running
@@ -187,13 +170,13 @@ And the result of such test is as bellow.
 \end{lstlisting}
 
 \begin{enumerate}
-\item For \texttt{test1}, we have the thread being joined run first, and have the other thread join the former run after;
-\item For \texttt{test2}, just the running order of the thread different from the first test;
+\item For \texttt{test1}, we have the thread being joined run first, and have the other thread join the former run later;
+\item For \texttt{test2}, just change the running order of the threads in the first test;
 \item For \texttt{test3}, we have a thread join two different threads;
 \item For \texttt{test4}, we have a thread be joined by two different threads;
 \end{enumerate}
 
-And the right results for all the tests must have the joined thread finished before the threads which join them continue. So we have the tests above is right, and by these tests, our \texttt{join} is right.
+And all the results shows that the joining thread finished before the threads being joined continue which is the expected results.
 \section{Implementation of \texttt{Condition2}}
 \subsection{Overview}
 Implement \texttt{Condition2} without using semaphore and \texttt{Condition2} must be equivalent implementation as \texttt{Condition}.
@@ -262,6 +245,70 @@ Using \texttt{selfTest()} in \texttt{Condition2},
 
 In this session, the test is using \texttt{Condition} and \texttt{Condition2} to do the same job, and compare their results, and then we finish the test. Here are the codes.
 \begin{lstlisting}
+	private static class Int {
+		int value;
+		Int(int _value){
+			value = _value;
+		}
+		public void inc(){
+			value++;
+		}
+		public void dec(){
+			value--;
+		}
+		public int val(){
+			return value;
+		}
+	}
+	private static class Producer implements Runnable {
+		private Int goods;
+		private Condition2 condition;
+		private Lock lock;
+		private int index;
+		
+		Producer(int _index, Int _goods, Condition2 _condition, Lock _lock){
+			index = _index;
+			goods = _goods;
+			condition = _condition;
+			lock = _lock;
+		}
+		
+		public void run() {
+			lock.acquire();
+			System.out.println("Producer " + index + " starts running");
+			goods.inc();
+			System.out.println("Producer " + index + " produces 1 item (" + goods.val() + " items)");
+			condition.wakeAll();
+			System.out.println("Producer " + index + " ends running");
+			lock.release();
+		}
+	}
+	private static class Consumer implements Runnable {
+		private Int goods;
+		private Condition2 condition;
+		private Lock lock;
+		private int index;
+		
+		Consumer(int _index, Int _goods, Condition2 _condition, Lock _lock) {
+			index = _index;
+			goods = _goods;
+			condition = _condition;
+			lock = _lock;
+		}
+		
+		public void run() {
+			lock.acquire();
+			System.out.println("Consumer " + index + " starts running");
+			while(goods.val() < 1){
+				System.out.println("Consumer " + index + " sleeps " + "(" + goods.val() + " items)");
+				condition.sleep();
+			}
+			goods.dec();
+			System.out.println("Consumer " + index + " consumes " + "" + 1 + " item (" + goods.val() + " items)");
+			System.out.println("Consumer " + index + " ends running");
+			lock.release();
+		}
+	}
 public static void selfTest(){
 	Int goods = new Int(0);
 	Lock lock = new Lock();
@@ -327,7 +374,7 @@ Consumer 1 ends running
 Consumer 2 consumes 1 item (0 items)
 Consumer 2 ends running
 \end{lstlisting}
-And it's easy to see that they are the same, and in this test, \texttt{Condition2} is right.
+In this test result, \texttt{Consumer} waits for \texttt{Producer} rightly when there is no good and \texttt{Consumer}, \texttt{Producer} consumes and produces good rightly. And \texttt{Condition2} works the same as \texttt{Condition}.
 \section{Implementation of \texttt{Alarm}}
 \subsection{Overview}
 Implementation of \texttt{Alarm} class, such that after the thread called \texttt{waitUtill(x)} at time \texttt{t} then \texttt{timerInterrupt} 
@@ -415,7 +462,7 @@ Thread recovers at 1540 (1540>=200+900)
 Thread recovers at 1550 (1550>=210+1000)
 \end{lstlisting}
 
-And the test accurately meet the needs.
+And the test accurately meet the needs, since all threads continues after the delay time.
 \section{Implementation of \texttt{Communicator}}
 \subsection{Overview}
 Implementat \texttt{Communicator} class. Two methods \texttt{speak} and \texttt{listener} to implement. The message is passed from exactly one 
@@ -589,7 +636,7 @@ Listener 5 hears 1 from speaker 1
 Listener 5 ends listening
 \end{lstlisting}
 
-And we finish our test, and by the results, we have the \texttt{Communicator} right.
+And According the results, each \texttt{Listener} listens to exactly one \texttt{Speaker} and each \texttt{Speaker} speaks to exactly one \texttt{Listener} which meets the requirements.
 \section{Implementation of \texttt{PriorityScheduler}}
 \subsection{Overview}
 Implement \texttt{PriorityScheduler} class so that the scheduler can properly schedule the threads by its priority and by priority donation 
@@ -777,7 +824,6 @@ Implement \texttt{Boat} class to solve the boat problem.
 \end{enumerate}
 
 \subsection{Description}
-
 \begin{algorithm}
     \begin{algorithmic}
     \Procedure{begin}{int adults, int children, BoatGrader b}
@@ -858,7 +904,7 @@ Implement \texttt{Boat} class to solve the boat problem.
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{Testing Plan}
+\subsection{Test}
 
 For this problem, the test is easy, just some examples with different numbers of adults or children.
 \end{document}
