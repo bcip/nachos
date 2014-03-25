@@ -701,16 +701,15 @@ public class PriorityScheduler extends Scheduler {
 		ThreadedKernel.scheduler.setPriority(threadM, 4);
 		ThreadedKernel.scheduler.setPriority(threadL, 1);
 		
+		threadO.fork();
+		threadO.join();
+		
 		threadM.fork();
 		threadL.fork();
-		threadH.fork();
-		
-		threadO.fork();
-		
-		threadO.join();
-		threadH.join();
 		threadM.join();
 		threadL.join();
+		threadH.fork();
+		threadH.join();
 		
 		Machine.interrupt().restore(intStatus);
 	}
