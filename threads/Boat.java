@@ -28,14 +28,7 @@ public class Boat {
 	public static void selfTest() {
 		BoatGrader b = new BoatGrader();
 
-		System.out.println("\n ***Testing Boats with only 2 children***");
 		begin(4, 3, b);
-
-		// System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
-		// begin(1, 2, b);
-
-		// System.out.println("\n ***Testing Boats with 3 children, 3 adults***");
-		// begin(3, 3, b);
 	}
 
 	public static void begin(int adults, int children, BoatGrader b) {

@@ -905,6 +905,47 @@ Implement \texttt{Boat} class to solve the boat problem.
 \end{algorithm}
 
 \subsection{Test}
+\begin{lstlisting}[language=java]
+	public static void selfTest() {
+		BoatGrader b = new BoatGrader();
 
-For this problem, the test is easy, just some examples with different numbers of adults or children.
+		begin(4, 3, b);
+	}
+\end{lstlisting}
+We test the case start with 4 adults and 3 childs and here is the result:
+\begin{lstlisting}
+A child has forked.
+A child has forked.
+A child has forked.
+An adult as forked.
+An adult as forked.
+An adult as forked.
+An adult as forked.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+**Child rowing to Oahu.
+**Adult rowing to Molokai.
+**Child rowing to Oahu.
+**Child rowing to Molokai.
+**Child arrived on Molokai as a passenger.
+\end{lstlisting}
+As we can easily check, the question is solved properly.
 \end{document}
