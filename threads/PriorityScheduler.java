@@ -136,14 +136,14 @@ public class PriorityScheduler extends Scheduler {
 
 		public void waitForAccess(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			
+
 			getThreadState(thread).waitForAccess(this, enqueueTimeCounter++);
 		}
 
 		public void acquire(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			
-			if(!transferPriority)
+
+			if (!transferPriority)
 				return;
 
 			if (occupyingThread != null)
@@ -160,15 +160,15 @@ public class PriorityScheduler extends Scheduler {
 			Lib.assertTrue(Machine.interrupt().disabled());
 
 			ThreadState nextThread = pickNextThread();
-			
-			if(nextThread == null)
+
+			if (nextThread == null)
 				return null;
 
 			waitingQueue.remove(nextThread);
-			
+
 			updateDonatingPriority();
-			
-			if(transferPriority)
+
+			if (transferPriority)
 				acquire(nextThread.getThread());
 
 			return nextThread.getThread();
@@ -236,7 +236,7 @@ public class PriorityScheduler extends Scheduler {
 			if (newDonatingPriority == donatingPriority)
 				return;
 
-			if(occupyingThread == null)
+			if (occupyingThread == null)
 				return;
 
 			getThreadState(occupyingThread).prepareToUpdateDonatingPriority(
@@ -452,16 +452,63 @@ public class PriorityScheduler extends Scheduler {
 		protected long enqueueTime;
 	}
 
-	private static void testWithoutDonation() {
+	private static void test1() {
+		System.out.println("PriorityScheduler.test1() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test1() ends.");
 	}
 
-	private static void testWithAlteredPriority() {
+	private static void test2() {
+		System.out.println("PriorityScheduler.test2() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test2() ends.");
+	}
+	
+	private static void test3() {
+		System.out.println("PriorityScheduler.test3() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test3() ends.");
 	}
 
-	private static void testWithDonation() {
+	public static void selfTest() {
+		test1();
+		test2();
 	}
 
-	private class PSTest implements Runnable {
+	private static class PSTest implements Runnable {
 		private int index;
 
 		PSTest(int _index) {
@@ -469,14 +516,11 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		public void run() {
-			System.out.println("PSTest " + index + " starts running");
-			System.out.println("PSTest " + index + " ends running");
+			int i;
+			for (i = 0; i < 5; i++) {
+				System.out.println("PSTest " + index + " loop " + i);
+				KThread.yield();
+			}
 		}
-	}
-
-	public static void selfTest() {
-		// boolean status = Machine.interrupt().disable();
-		// ThreadedKernel.scheduler.setPriority(thread, priority);
-		// Machine.interrupt().restore(status);
 	}
 }
