@@ -3,12 +3,43 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{listings, xcolor}
+%\lstset{%numbers=left, %设置行号位置
+%        %numberstyle=\tiny, %设置行号大小
+%        keywordstyle=\color{blue}, %设置关键字颜色
+%        commentstyle=\color[cmyk]{1,0,1,0}, %设置注释颜色
+%        frame=single, %设置边框格式
+%        escapeinside=``, %逃逸字符(1左面的键)，用于显示中文
+%        breaklines, %自动折行
+%        extendedchars=false, %解决代码跨页时，章节标题，页眉等汉字不显示的问题
+%        xleftmargin=1em,xrightmargin=2em, aboveskip=1em, %设置边距
+%        tabsize=4, %设置tab空格数
+%        showspaces=false %不显示空格
+%       }
+%\lstset{numbers=left, language=Java, 
+%numberstyle=\tiny, 
+%keywordstyle=\color{blue!70}, commentstyle=\color{red!50!green!50!blue!50}, 
+%frame=shadowbox, 
+%rulesepcolor=\color{red!20!green!20!blue!20},escapeinside=“, xleftmargin=2em,xrightmargin=2em, aboveskip=1em, breaklines}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
 
-\lstset{numbers=left, language=Java, 
-numberstyle=\tiny, 
-keywordstyle=\color{blue!70}, commentstyle=\color{red!50!green!50!blue!50}, 
-frame=shadowbox, 
-rulesepcolor=\color{red!20!green!20!blue!20},escapeinside=“, xleftmargin=2em,xrightmargin=2em, aboveskip=1em, breaklines}
+\lstset{frame=tb,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true
+  tabsize=3
+}
 
 \title{Project 1 - Build a thread system for kernel processes}
 \author{Xie Yuanhang\\ 2011012344\and
@@ -71,7 +102,7 @@ Shown in pseudocode.
 \end{algorithm}
 \subsection{Test}
 Using \texttt{selfTest()} method in \texttt{KThread}, the main thought is making some \texttt{join} example, so we have those test below.
-\begin{lstlisting}
+\begin{lstlisting}[language=java]
 	private static void test1(){
 		//Test Case 1
 		System.out.println("\n*** Test Case 1 for join ***");
