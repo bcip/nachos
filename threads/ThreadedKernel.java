@@ -48,8 +48,12 @@ public class ThreadedKernel extends Kernel {
 	 * here.
 	 */
 	public void selfTest() {
+<<<<<<< HEAD
 /*
 		System.out.println("Test Join:");
+=======
+		/*System.out.println("Test Join:");
+>>>>>>> 9976fe35cf6c9750dda3afa66108141873ef5bd0
 		KThread.selfTest();
 		System.out.println("*************************************");
 
@@ -63,6 +67,7 @@ public class ThreadedKernel extends Kernel {
 
 		System.out.println("Test Communicator:");
 		Communicator.selfTest();
+<<<<<<< HEAD
 		System.out.println("*************************************");
 */
 		System.out.println("Test PriorityScheduler:");
@@ -73,6 +78,18 @@ public class ThreadedKernel extends Kernel {
 		Boat.selfTest();
 		System.out.println("*************************************");
 */
+=======
+		System.out.println("*************************************");*/
+
+		System.out.println("Test PriorityScheduler:");
+		PriorityScheduler.selfTest();
+		System.out.println("*************************************");
+
+		/*System.out.println("Test Boat:");
+		Boat.selfTest();
+		System.out.println("*************************************");*/
+
+>>>>>>> 9976fe35cf6c9750dda3afa66108141873ef5bd0
 		// Semaphore.selfTest();
 		// SynchList.selfTest();
 		if (Machine.bank() != null) {
