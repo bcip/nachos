@@ -29,7 +29,7 @@ public class Boat {
 		BoatGrader b = new BoatGrader();
 
 		System.out.println("\n ***Testing Boats with only 2 children***");
-		begin(0, 2, b);
+		begin(1, 0, b);
 
 		// System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
 		// begin(1, 2, b);
@@ -192,6 +192,6 @@ public class Boat {
 		bg.ChildRideToMolokai();
 		bg.AdultRideToMolokai();
 		bg.ChildRideToMolokai();
-	}
+		}
 
 }
