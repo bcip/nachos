@@ -128,7 +128,7 @@ int join(int processID, int *status);
  *
  * Returns the new file descriptor, or -1 if an error occurred.
  */
-int creat(char *name);
+int create(char *name);
 
 /**
  * Attempt to open the named file and return a file descriptor.
