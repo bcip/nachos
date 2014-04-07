@@ -270,11 +270,72 @@ unloadSections} to make sure that memory for processes are used properly and eff
 In this task, we mainly need to implement the rest system calls such as \texttt{exec, join, exit} to support operations on thread.
 \subsection{Correctness Constraints}
 \begin{compactitem}
-\item
-\item
+\item \texttt{handleExit}:
+\begin{compactitem}[$\bullet$]
+\item its thread should be terminated, and the process clean up any state associated with it.
+\item last process should cause the machine to halt.
+\end{compactitem}
+\item \texttt{handleExec}:
+\begin{compactitem}[$\bullet$]
+\item exec file should exist and is coff file.
+\item exec arguments should legal.
+\end{compactitem}
+\item \texttt{handleJoin}: only a process's parent can join to it.
 \end{compactitem}
 \subsection{Declaration}
+\begin{compactitem}
+\item Declare a static number \texttt{processIdCounter} and a lock \texttt{processIdCounterLock} for it. And in the construct method, we add \texttt{processIdCounter} by 1 with the lock around.
+\item Declare \texttt{thread} of the process, \texttt{UThread} class.
+\item Declare \texttt{parent}, \texttt{UserProcess} class. The parent process of the process.
+\item Declare \texttt{childList}, a list of child process.
+\item Declare \texttt{exitStatusMap} and a lock \texttt{exitStatusMapLock}. To save the exitvalue of its child process.
+\end{compactitem}
+
 \subsection{Description}
+\begin{algorithm*}
+    \begin{algorithmic}
+				\Procedure{UserProcess()}{}
+					\State do initialize stuff\dots
+					\State acquire \texttt{processIdCounterLock}
+					\State increase \texttt{processIdCounter} by 1
+					\State release \texttt{processIdCounterLock}
+				\EndProcedure
+				\Procedure{execute}{String name, String[] args}
+					\State new an \texttt{UThread} of this process.
+					\State remember the thread into \texttt{thread}.
+				\EndProcedure
+        \Procedure{handleExit}{int exitvalue}
+            \State remove this from its parent's \texttt{childList}
+						\State unload this process's section by \texttt{unloadSections}
+            \State transfer exitvalue to its parent
+            \State clear this process's \texttt{exitStatusMap} and \texttt{childList}
+            \If{this process is "root" process}
+                \State Kernel.kernel.terminate()
+            \Else
+                \State finish this process
+            \EndIf
+        \EndProcedure
+				\Procedure{handleExec}{int fileNameAddress,  int argc, int argv}
+					\State Some bullet-proof statements\dots
+					\For{\texttt{argc} times}
+						\State Calculate argument address
+						\State Read each argument
+					\EndFor
+					\State New a \texttt{UserProcess} \texttt{child} and execute it with arguments return a boolean \texttt{executed}
+					\State If \texttt{executed} is true, add \texttt{child} into \texttt{childList} and set \texttt{child.parent} as \texttt{this}; else return -1
+					\State \Return \texttt{child.ProcessId}.
+				\EndProcedure
+				\Procedure{handleJoin}{int pid, int statusAddress}
+					\State find the corresponding child process \texttt{child} using \texttt{pid}
+					\State call \texttt{child.thread.join}
+					\State once \texttt{child.thread.join} return, remove \texttt{child} from \texttt{childList}
+					\State acquire \texttt{exitStatusMapLock}
+					\State get \texttt{child}'s exit status from \texttt{exitStatusMap}
+					\State release \texttt{exitStatusMapLock}
+					\State write exit status into \texttt{statusAddress}.
+				\EndProcedure
+    \end{algorithmic}
+\end{algorithm*}
 \subsection{Test}
 
 \section{Implement Lottery Scheduler}
