@@ -3,6 +3,7 @@
 *.pdf
 *.gz
 *.toc
+*.swp
 *.*~
 *.class
 !*.tex
