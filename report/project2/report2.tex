@@ -3,6 +3,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{listings, xcolor}
+\usepackage{paralist}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -38,8 +39,59 @@ Wang Qinshi\\ 2012011311}
 \texttt{https://github.com/bcip/nachos}
 \section{Implement File System Calls}
 \subsection{Overview}
+In this task, we mainly need to implement system calls related to file system such as \texttt{create, open, read, write, close} and \texttt{unlink}
+.
 \subsection{Correctness Constraints}
+\begin{enumerate}
+	\item[$\bullet$] \texttt{handleCreate: }
+		\begin{compactitem}
+		\item Call the method \texttt{open(String name, boolean true} provided in \texttt{FileSystem}.
+		\item Save the returned \texttt{Openfile} by above method.
+		\end{compactitem}
+	\item[$\bullet$] \texttt{handleOpen:} Same as \texttt{handleCreate} but call method \texttt{open(String name, boolean true} provided in \texttt{FileSystem}.
+	\item[$\bullet$] \texttt{handleRead, handleWrite:} Keep a record for the location of your reading.
+	\item[$\bullet$] \texttt{handleClose:} Note that a given file
+descriptor can be reused if the file associated with it is closed, and that different processes can
+use the same file descriptor (i.e. integer) to refer to different files.
+	\item[$\bullet$] \texttt{handleUnlink:} Need to judge whether there is still a process have the file open.
+	\item[$\bullet$] \texttt{handleHalt:} Need to judge whether the caller is the root process.
+\end{enumerate}
 \subsection{Declaration}
+\begin{compactitem}
+\item Declare an enclapsed \text{FileDescriptor} class recording the \texttt{OpenFile}, location, a \texttt{boolean} \texttt{remove}.
+\item Declare an array with length 16 of \texttt{FileDescriptor} \texttt{fileDescriptor}, prepare two \texttt{Openfile}: standart input and output.
+\item \texttt{Create:} 
+	\begin{enumerate}
+		\item[$\bullet$] read file name from virtual memory.
+		\item[$\bullet$] call \texttt{open(String name, true)} and save the returned \texttt{Openfile}.
+		\item[$\bullet$] save the \texttt{fileDescriptor} into the array \texttt{fileDescriptor}.
+	\end{enumerate}
+\item \texttt{Open:} Almost the same as \texttt{Create} but call \texttt{open(String name, false}.
+\item \texttt{Read:}
+	\begin{compactitem}
+		\item Read the index of \texttt{FileDescriptor} ,the writing location of virtual memory \texttt{location} and the length of characters \texttt{count}.
+		\item Pick the corresponding \texttt{FileDescriptor} and get the \texttt{Openfile} file, and call the method \texttt{file.read} to write the message into an array \texttt{buffer}.
+		\item Write \texttt{buffer} into virtual memory, update the location.
+	\end{compactitem}
+\item \texttt{Write:}
+	\begin{compactitem}
+		\item Read the index of \texttt{FileDescriptor} ,the writing location of virtual memory \texttt{location} and the length of characters \texttt{count}.
+		\item Pick the corresponding \texttt{FileDescriptor} and get the \texttt{Openfile} file, and read the message from virtual memory into an array \texttt{buffer}.
+		\item Write \texttt{buffer} into the file, update the location.
+	\end{compactitem}
+\item \texttt{Close:}
+	\begin{compactitem}
+		\item Pick the corresponding \texttt{FileDescriptor}.
+		\item Close the file.
+		\item Decide whether to remove the file i.e. whether it is unlinked.
+	\end{compactitem}
+\item \texttt{Unlink:}
+	\begin{compactitem}
+		\item Read fileName and find corresponding file.
+		\item If any processes still have the file open, the file will remain in existence until the last file descriptor referring to it is closed. 
+		\item If no process still have the file open, simply remove it.
+	\end{compactitem}
+\end{compactitem}
 \subsection{Description}
 \subsection{Test}
 
@@ -63,4 +115,4 @@ Wang Qinshi\\ 2012011311}
 \subsection{Declaration}
 \subsection{Description}
 \subsection{Test}
-\end{document}
+\end{document} 
