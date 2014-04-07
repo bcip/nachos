@@ -4,6 +4,8 @@
 \usepackage{algpseudocode}
 \usepackage{listings, xcolor}
 \usepackage{paralist}
+\usepackage{chngpage}
+
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -26,11 +28,15 @@
 }
 
 \title{Project 2 - Support Multiprogramming}
-\author{Xie Yuanhang\\ 2011012344\and
-Kuang Zhonghong\\ 2011012357\and
-Li Qingyang\\ 2011012360\and
-Yin Mingtian\\ 2011012362\and
-Wang Qinshi\\ 2012011311}
+\author{
+Xie Yuanhang  \\   2011012344\and
+Kuang Zhonghong  \\   2011012357\and
+Li Qingyang   \\   2011012360 \and
+Yin Mingtian   \\   2011012362\and
+Wang Qinshi   \\   2012011311}
+
+\changetext{}{+1cm}{-0.5cm}{-0.5cm}{}
+
 \date{}
 \begin{document}
 \maketitle
@@ -40,7 +46,7 @@ Wang Qinshi\\ 2012011311}
 \section{Implement File System Calls}
 \subsection{Overview}
 In this task, we mainly need to implement system calls related to file system such as \texttt{create, open, read, write, close} and \texttt{unlink}
-.
+. 
 \subsection{Correctness Constraints}
 \begin{enumerate}
 	\item[$\bullet$] \texttt{handleCreate: }
@@ -93,18 +99,180 @@ use the same file descriptor (i.e. integer) to refer to different files.
 	\end{compactitem}
 \end{compactitem}
 \subsection{Description}
+Shown in pseudocode.
+\begin{algorithm}
+    \begin{algorithmic}
+        \Procedure{handleHalt()}{}
+            \If{this process is not "root" process}
+                \State return -1
+            \EndIf
+            \State make the \texttt{halt} system call
+        \EndProcedure
+    \end{algorithmic}
+    \begin{algorithmic}
+        \Procedure{handleCreate}{int file}
+            \State filename $\leftarrow$ get the name of file from virtual memory
+            \State temp $\leftarrow$ UserKernel.fileSystem.open(filename, true)
+            \If{temp is null}
+                \State return -1
+            \Else
+                \State find the empty element in the array of \texttt{FileDescriptor}
+                \If{no empty element}
+                    \State return -1
+                \Else
+                    \State write the \texttt{FileDescriptor}
+                    \State return the index
+                \EndIf
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+    \begin{algorithmic}
+        \Procedure{handleOpen}{int file}
+            \State filename $\leftarrow$ get the name of file from virtual memory
+            \State temp $\leftarrow$ UserKernel.fileSystem.open(filename, false)
+            \If{temp is null}
+                \State return -1
+            \Else
+                \State find the empty element in the array of \texttt{FileDescriptor}
+                \If{no empty element}
+                    \State return -1
+                \Else
+                    \State write the \texttt{FileDescriptor}
+                    \State return the index
+                \EndIf
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+    \begin{algorithmic}
+        \Procedure{handleRead}{int index, int vaddr, int size}
+            \If{index is out of range and element of this index is null}
+                \State return -1
+            \EndIf
+            \State read the file to buffer with capacity size
+            \If{the read above is not success}
+                \State return -1
+            \Else
+                \State write buffer to vitural memory
+                \State update position of the file
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+    \begin{algorithmic}
+        \Procedure{handleWrite}{int index, int vaddr, int size}
+            \If{index is out of range and element of this index is null}
+                \State return -1
+            \EndIf
+            \State write to buffer from virtual memory
+            \State write to file
+            \If{the write above is not success}
+                \State return -1
+            \Else
+                \State update position of the file
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+    \begin{algorithmic}
+        \Procedure{handleClose}{int index}
+            \If{the index is out of range}
+                \State return -1
+            \EndIf
+            \State close the file at the index
+            \If{this file is denote as remove}
+                \If{rest of \texttt{FileDescriptor} doesn't contain this file}
+                    \State remove this file
+                \EndIf
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+    \begin{algorithmic}
+        \Procedure{handleUnlink}{int file}
+            \State filename $\leftarrow$ get the name of file from virtual memory
+            \If{this filename is not contain in the array of \texttt{FileDescriptor}}
+                \State remove this file
+            \Else
+                \State denote the elements in array of \texttt{FileDescriptor} equal filename as remove
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
 \subsection{Test}
 
 \section{Implement Support for Multiprogramming}
 \subsection{Overview}
+In this task, we mainly need to implement support for multiprogramming i.e. alter \texttt{readVirtualMemory, writeVirtualMemory, loadSections,
+unloadSections} to make sure that memory for processes are used properly and efficiently.
 \subsection{Correctness Constraints}
-\subsection{Declaration}
+\begin{compactitem}
+\item Efficiency of memory: we can't simply allocate pages in a contiguous block and we need to make sure that a process's memory is freed on exit.
+\item Maintaince of pageTable for user process. Methods 
+\end{compactitem}
+\subsection{Declaration} 
+\begin{compactitem}
+\item Declare a list of available physical pages \texttt{availablePages} in \texttt{UserKernel} and a \texttt{Lock} lock for synchronization.
+\item Declare an array of \texttt{TranslationEntry} \texttt{pageTable} in \texttt{UserProcess}.
+\item \texttt{readVirtualMemory:} transfer data from virtual memory into array \texttt{data}. Check the range.
+\item \texttt{writeVirtualMemory:} transfer data from array \texttt{data} into virtual memory. Check the range.
+\item \texttt{loadSections:} set the pageTable structure which is an array of \texttt{TranslationEntry}.
+\item \texttt{unloadSections:} release the resources allocated by \texttt{loadSections}.
+\end{compactitem}
 \subsection{Description}
+\begin{algorithm*}
+	\caption{In \texttt{class UserKernel}}
+	\begin{algorithmic}
+		\Procedure {UserKernel.initialize}{String[] args}
+			\State \dots
+			\State lock = new Lock()
+			\State Allocation the required number of physical pages into \texttt{availablePages}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm*}
+\begin{algorithm*}
+	\caption{In \texttt{class UserProcess}}
+	\begin{algorithmic}
+		\Procedure {readVirtualMemory}{int vaddr, byte[] data, int offset, int length}
+			\State Get start and end page number by \texttt{Machine.processor.pageFromAddress}
+			\For{from state page to end page}
+				\State copy the corresponding piece of data into right page by \texttt{System.arraycopy} 
+				\State and set the \texttt{TranslateEntry}.
+			\EndFor
+		\EndProcedure
+		\Procedure{writeVirtualMemory}{int vaddr, byte[] data, int offset, int length}
+			\State Get the reference to memory by \texttt{Machine.processor.getMemory}.
+			\State Get start and end page number by \texttt{Machine.processor.pageFromAddress}
+		\EndProcedure
+		\Procedure{loadSections}{}
+			\State Acquire \texttt{UserKernel.lock}
+			\State Get available physical memory from \texttt{UserKernel.allPages} by remove items from \texttt{availablePages}
+			\State and store into \texttt{pageTable}
+			\State Release \texttt{UserKernel.lock}
+			\State (i.e. map physical memory into virtual memory).
+			\For{each section}
+				\State load the section into memory through \texttt{TranslationEntry}
+			\EndFor
+		\EndProcedure
+		\Procedure{unloadSections}{}
+			\State Acquire \texttt{UserKernel.lock}
+			\State Release the allocated memory by adding them back into \texttt{availablePages}.
+			\State Release \texttt{UserKernel.lock}
+			\State close all files.
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm*}
 \subsection{Test}
 
 \section{Implement Other System Calls}
 \subsection{Overview}
+In this task, we mainly need to implement the rest system calls such as \texttt{exec, join, exit} to support operations on thread.
 \subsection{Correctness Constraints}
+\begin{compactitem}
+\item
+\item
+\end{compactitem}
 \subsection{Declaration}
 \subsection{Description}
 \subsection{Test}
