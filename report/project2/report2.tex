@@ -43,7 +43,7 @@ Wang Qinshi   \\   2012011311}
 \tableofcontents{}
 \section{URL of git Repository}
 \texttt{https://github.com/bcip/nachos}
- \section{Implement File System Calls}
+\section{Implement File System Calls}
 \subsection{Overview}
 In this task, we mainly need to implement system calls related to file system such as \texttt{create, open, read, write, close} and \texttt{unlink}
 .
@@ -108,6 +108,40 @@ class UserKernel {
 		}
 	}
 }
+
+/** Exception Handler for Bullet-proof call with different exception cause in the implemented methods **/
+public void handleException(int cause) {
+	Processor processor = Machine.processor();
+
+	switch (cause) {
+	case Processor.exceptionSyscall:
+	    int result = handleSyscall(processor.readRegister(Processor.regV0),
+				       processor.readRegister(Processor.regA0),
+				       processor.readRegister(Processor.regA1),
+				       processor.readRegister(Processor.regA2),
+				       processor.readRegister(Processor.regA3)
+				       );
+	    processor.writeRegister(Processor.regV0, result);
+	    processor.advancePC();
+	    break;
+	case Processor.exceptionAddressError:
+	case Processor.exceptionBusError:
+	case Processor.exceptionIllegalInstruction:
+	case Processor.exceptionOverflow:
+	case Processor.exceptionPageFault:
+	case Processor.exceptionReadOnly:
+	case Processor.exceptionTLBMiss:
+			System.err.println("Exception: " + Processor.exceptionNames[cause]);
+			UserKernel.getKernel().processManager.setError(pid);
+			handleExit(-1);
+			break;
+
+	default:
+	    Lib.debug(dbgProcess, "Unexpected exception: " +
+		      Processor.exceptionNames[cause]);
+	    Lib.assertNotReached("Unexpected exception");
+	}
+    }
 \end{lstlisting}
 \begin{algorithm}
 		\caption{In class UserProcess}
@@ -216,7 +250,6 @@ class UserKernel {
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
-
 \subsection{Test}
 Test with c code through MIPS. We can call methods \texttt{close, creat, unlink, write, read, open} in a c file with different orders and see if 
 the operations meet the requirements.
@@ -338,6 +371,7 @@ In this task, we mainly need to implement the rest system calls such as \texttt{
 	\texttt{threadList}.
 \item Declare \texttt{parent}, \texttt{UserProcess} class. The parent process of the process.
 \item Declare \texttt{childList}, a list of child process.
+\item Declare \texttt{threadListLock} and \texttt{childListLock}.
 \item Declare \texttt{exitStatusMap} and a lock \texttt{exitStatusMapLock}. To save the exitvalue of its child process.
 \end{compactitem}
 
@@ -369,17 +403,24 @@ In the form of pseudocode,
 				\Procedure{execute}{String name, String[] args}
 					\State validata parameters
 					\State new an \texttt{UThread} of this process.
+					\State acquire \texttt{threadListLock}
 					\State add the thread into \texttt{threadList}.
+					\State release \texttt{threadListLock}
 				\EndProcedure
         \Procedure{handleExit}{int exitvalue}
             \State remove this from its parent's \texttt{childList}
 						\State unload this process's section by \texttt{unloadSections}
             \State transfer exitvalue to its parent
+						\State acquire \texttt{threadListLock}
+						\State acquire \texttt{exitStatusMapLock}
             \State clear this process's \texttt{exitStatusMap} and \texttt{childList}
+						\State release \texttt{threadListLock}
+						\State release \texttt{exitStatusMapLock}
             \If{this process is "root" process}
                 \State Kernel.kernel.terminate()
             \Else
 								\State release all its memory, close all its files.
+								\State \texttt{unloadSections}
 %								\State remove itself from the list in \texttt{UserKernel.processManager}
                 \State finish this process
             \EndIf
@@ -396,7 +437,9 @@ In the form of pseudocode,
 					\EndFor
 					\State New a \texttt{UserProcess} \texttt{child} and execute it with arguments return a boolean \texttt{executed}
 					\If{\texttt{executed} is true}
+						\State acquire \texttt{childListLock}
 						\State add \texttt{child} into \texttt{childList} and set \texttt{child.parent} as \texttt{this}
+						\State release \texttt{childListLock}
 					\Else 
 						\State \Return -1
 					\EndIf
@@ -407,7 +450,9 @@ In the form of pseudocode,
 					\For{each thread in \texttt{child.threadList}}
 						\State call \texttt{thread.join}
 					\EndFor
+					\State acquire \texttt{childListLock}
 					\State once \texttt{child} return, remove \texttt{child} from \texttt{childList}
+					\State release \texttt{childListLock}
 					\State acquire \texttt{exitStatusMapLock}
 					\State get \texttt{child}'s exit status from \texttt{exitStatusMap}
 					\State release \texttt{exitStatusMapLock}
@@ -416,7 +461,16 @@ In the form of pseudocode,
     \end{algorithmic}
 \end{algorithm*}
 \subsection{Test}
-
+Test with c code through MIPS. We can call methods \texttt{exec, join, exit} in a c file and see if 
+the operations meet the requirements.
+\begin{compactitem}
+\item Create process and exit it explicitly to see whether \texttt{exit} is valid.
+\item Create several process and validate process id.
+\item Check if the return value is -1 when the process meets an error
+\item Test standart input and output
+\item Check \texttt{join} by test the return order.
+\item A \texttt{join} to B when A is not B's parent, should meet an error
+\end{compactitem}
 \section{Implement Lottery Scheduler}
 \subsection{Overview}
 In this task, we mainly need to implement \texttt{LotteryScheduler} by extending \texttt{PrioriryScheduler}.
