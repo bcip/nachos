@@ -46,7 +46,7 @@ Wang Qinshi   \\   2012011311}
 \section{Implement File System Calls}
 \subsection{Overview}
 In this task, we mainly need to implement system calls related to file system such as \texttt{create, open, read, write, close} and \texttt{unlink}
-.
+. 
 \subsection{Correctness Constraints}
 \begin{enumerate}
 	\item[$\bullet$] \texttt{handleCreate: }
@@ -66,7 +66,7 @@ use the same file descriptor (i.e. integer) to refer to different files.
 \begin{compactitem}
 \item Declare an enclapsed \text{FileDescriptor} class recording the \texttt{OpenFile}, location, a \texttt{boolean} \texttt{remove}.
 \item Declare an array with length 16 of \texttt{FileDescriptor} \texttt{fileDescriptor}, prepare two \texttt{Openfile}: standart input and output.
-\item \texttt{Create:}
+\item \texttt{Create:} 
 	\begin{enumerate}
 		\item[$\bullet$] read file name from virtual memory.
 		\item[$\bullet$] call \texttt{open(String name, true)} and save the returned \texttt{Openfile}.
@@ -94,7 +94,7 @@ use the same file descriptor (i.e. integer) to refer to different files.
 \item \texttt{Unlink:}
 	\begin{compactitem}
 		\item Read fileName and find corresponding file.
-		\item If any processes still have the file open, the file will remain in existence until the last file descriptor referring to it is closed.
+		\item If any processes still have the file open, the file will remain in existence until the last file descriptor referring to it is closed. 
 		\item If no process still have the file open, simply remove it.
 	\end{compactitem}
 \end{compactitem}
@@ -209,9 +209,9 @@ unloadSections} to make sure that memory for processes are used properly and eff
 \subsection{Correctness Constraints}
 \begin{compactitem}
 \item Efficiency of memory: we can't simply allocate pages in a contiguous block and we need to make sure that a process's memory is freed on exit.
-\item Maintaince of pageTable for user process. Methods
+\item Maintaince of pageTable for user process. Methods 
 \end{compactitem}
-\subsection{Declaration}
+\subsection{Declaration} 
 \begin{compactitem}
 \item Declare a list of available physical pages \texttt{availablePages} in \texttt{UserKernel} and a \texttt{Lock} lock for synchronization.
 \item Declare an array of \texttt{TranslationEntry} \texttt{pageTable} in \texttt{UserProcess}.
@@ -237,7 +237,7 @@ unloadSections} to make sure that memory for processes are used properly and eff
 		\Procedure {readVirtualMemory}{int vaddr, byte[] data, int offset, int length}
 			\State Get start and end page number by \texttt{Machine.processor.pageFromAddress}
 			\For{from state page to end page}
-				\State copy the corresponding piece of data into right page by \texttt{System.arraycopy}
+				\State copy the corresponding piece of data into right page by \texttt{System.arraycopy} 
 				\State and set the \texttt{TranslateEntry}.
 			\EndFor
 		\EndProcedure
@@ -340,43 +340,8 @@ In this task, we mainly need to implement the rest system calls such as \texttt{
 
 \section{Implement Lottery Scheduler}
 \subsection{Overview}
-In this task, a \texttt{LotteryScheduler} is implemented.
 \subsection{Correctness Constraints}
-\begin{itemize}
-    \item
-        Functions \texttt{getPriority}, \texttt{getEffectivePriority}, \texttt{setPriority},
-        \texttt{ThreadQueue.waitForAccess}, \texttt{ThreadQueue.acquire} and
-        \texttt{ThreadQueue.nextThread} can be called only when \texttt{Machine.interrupt().disabled()}.
-    \item
-        Function \texttt{setPriority(KThread thread, int priority)} can be called only when
-        \texttt{priority >= priorityMinimum} and \texttt{priority <= priorityMaximum}.
-    \item
-        The total number of tickets must fit the range of \texttt{int}.
-\end{itemize}
 \subsection{Declaration}
-\begin{itemize}
-    \item
-        Override constants \texttt{priorityDefault}, \texttt{priorityMinimum} and \texttt{priorityMaximum}.
-    \item
-        Override functions \texttt{newThreadQueue} and \texttt{getThreadState}.
-    \item
-        Class \texttt{LotteryThreadQueue} extends \texttt{PriorityQueue}:
-        \begin{itemize}
-            \item
-                Override functions
-                \begin{itemize}
-                    \item \texttt{pickNextThread}
-                    \item \texttt{updateDonatingPriority}
-                \end{itemize}
-        \end{itemize}
-    \item
-        Class \texttt{ThreadState} extends \texttt{super.ThreadState}:
-        \begin{itemize}
-            \item
-                Override function \texttt{updateEffectivePriority}
-        \end{itemize}
-\end{itemize}
-
 \subsection{Description}
 \subsection{Test}
-\end{document}
+\end{document} 

@@ -431,7 +431,7 @@ public class PriorityScheduler extends Scheduler {
 			updateEffectivePriority();
 		}
 
-		private void updateEffectivePriority() {
+		protected void updateEffectivePriority() {
 			int newEffectivePriority = priority;
 			if (!acquires.isEmpty())
 				newEffectivePriority = Math.max(priority, acquires.first()
