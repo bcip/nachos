@@ -340,7 +340,7 @@ In this task, we mainly need to implement the rest system calls such as \texttt{
 
 \section{Implement Lottery Scheduler}
 \subsection{Overview}
-In this task, a \texttt{LotteryScheduler} is implemented.
+In this task, we mainly need to implement \texttt{LotteryScheduler} by extending \texttt{PrioriryScheduler}.
 \subsection{Correctness Constraints}
 \begin{itemize}
     \item
@@ -356,27 +356,52 @@ In this task, a \texttt{LotteryScheduler} is implemented.
 \subsection{Declaration}
 \begin{itemize}
     \item
-        Override constants \texttt{priorityDefault}, \texttt{priorityMinimum} and \texttt{priorityMaximum}.
+        Over ride constants \texttt{priorityDefault}, \texttt{priorityMinimum} and \texttt{priorityMaximum}.
     \item
-        Override functions \texttt{newThreadQueue} and \texttt{getThreadState}.
+        Ove rride functions \texttt{newThreadQueue} and \texttt{getThreadState}.
     \item
-        Class \texttt{LotteryThreadQueue} extends \texttt{PriorityQueue}:
+        Class \texttt{LotteryQueue} extends \texttt{PriorityQueue}:
         \begin{itemize}
-            \item
+            \item 
                 Override functions
                 \begin{itemize}
                     \item \texttt{pickNextThread}
                     \item \texttt{updateDonatingPriority}
                 \end{itemize}
         \end{itemize}
-    \item
+    \item 
         Class \texttt{ThreadState} extends \texttt{super.ThreadState}:
         \begin{itemize}
             \item
                 Override function \texttt{updateEffectivePriority}
         \end{itemize}
 \end{itemize}
-
 \subsection{Description}
+\begin{algorithm*}
+	\caption{In class LotteryScheduler}
+	\begin{algorithmic}
+		\Procedure{newThreadQueue}{boolean transferPriority}
+			\State \Return new LotteryQueue(transferPriority)
+		\EndProcedure
+		\Procedure{getThreadState}{KThread thread}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm*}
+\begin{algorithm*}
+	\caption{In class LotteryQueue}
+	\begin{algorithmic}
+		\Procedure{pickNextThread}{}
+		\EndProcedure
+		\Procedure{updateDonatingPriority}{}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm*}
+\begin{algorithm*}
+	\caption{In class LotteryScheduler.ThreadState}
+	\begin{algorithmic}
+		\Procedure{updateEffectivePriority}{}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm*}
 \subsection{Test}
 \end{document}
