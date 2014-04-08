@@ -57,7 +57,7 @@ In this task, we mainly need to implement system calls related to file system su
 \end{compactitem}
 \subsection{Declaration}
 \begin{compactitem}
-\item Declare new class \texttt{FileManager} in \texttt{UserKernel}. Remember each file's name, how many process open it, and whether it should 
+\item Declare new class \texttt{FileManager} in \texttt{UserKernel}. Remember each file's name, how many process open it, and whether it should
 	be unlinked.
 \item Declare an enclapsed \text{FileDescriptor} class recording the \texttt{OpenFile}, location.
 \item Declare an array with length 16 of \texttt{FileDescriptor} \texttt{fileDescriptor}, prepare two \texttt{Openfile}: standart input and output.
@@ -227,7 +227,7 @@ public void handleException(int cause) {
             \If{the index is out of range}
                 \State return -1
             \EndIf
-						\State close the file at the index 
+						\State close the file at the index
 						\State reduce \texttt{fileNode.times} by 1 in \texttt{UserKernel.fileManager}
 						\State if \texttt{fileNode.times} turns to be 0, remove from the \texttt{fileMapList}.
 						\State if \texttt{fileNode.times} equals 0 and \texttt{fileNode.unlink} is \texttt{true}, unlink the file.
@@ -245,13 +245,13 @@ public void handleException(int cause) {
                 \State remove this file
             \Else
 						\State find \texttt{fileNode} of \texttt{file} in \texttt{UserKernel.fileManager}.
-						\State mark \texttt{fileNode.unlink} as \texttt{true} in \texttt{UserKernel.fileManager} 
+						\State mark \texttt{fileNode.unlink} as \texttt{true} in \texttt{UserKernel.fileManager}
             \EndIf
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
 \subsection{Test}
-Test with c code through MIPS. We can call methods \texttt{close, creat, unlink, write, read, open} in a c file with different orders and see if 
+Test with c code through MIPS. We can call methods \texttt{close, creat, unlink, write, read, open} in a c file with different orders and see if
 the operations meet the requirements.
 \begin{compactitem}
 \item Normal create, close, write, read, open, unlink
@@ -367,7 +367,7 @@ In this task, we mainly need to implement the rest system calls such as \texttt{
 \subsection{Declaration}
 \begin{compactitem}
 \item Declare a static number \texttt{processIdCounter} and a lock \texttt{processIdCounterLock} for it. And in the construct method, we add \texttt{processIdCounter} by 1 with the lock around.
-\item Declare a array of \texttt{UThread} \texttt{threadList} of the process. When a thread is created, it should be added into its process's 
+\item Declare a array of \texttt{UThread} \texttt{threadList} of the process. When a thread is created, it should be added into its process's
 	\texttt{threadList}.
 \item Declare \texttt{parent}, \texttt{UserProcess} class. The parent process of the process.
 \item Declare \texttt{childList}, a list of child process.
@@ -440,7 +440,7 @@ In the form of pseudocode,
 						\State acquire \texttt{childListLock}
 						\State add \texttt{child} into \texttt{childList} and set \texttt{child.parent} as \texttt{this}
 						\State release \texttt{childListLock}
-					\Else 
+					\Else
 						\State \Return -1
 					\EndIf
 					\State \Return \texttt{child.ProcessId}.
@@ -461,7 +461,7 @@ In the form of pseudocode,
     \end{algorithmic}
 \end{algorithm*}
 \subsection{Test}
-Test with c code through MIPS. We can call methods \texttt{exec, join, exit} in a c file and see if 
+Test with c code through MIPS. We can call methods \texttt{exec, join, exit} in a c file and see if
 the operations meet the requirements.
 \begin{compactitem}
 \item Create process and exit it explicitly to see whether \texttt{exit} is valid.
@@ -495,14 +495,14 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
     \item
         Class \texttt{LotteryQueue} extends \texttt{PriorityQueue}:
         \begin{itemize}
-            \item 
+            \item
                 Override functions
                 \begin{itemize}
                     \item \texttt{pickNextThread}
                     \item \texttt{updateDonatingPriority}
                 \end{itemize}
         \end{itemize}
-    \item 
+    \item
         Class \texttt{ThreadState} extends \texttt{super.ThreadState}:
         \begin{itemize}
             \item
@@ -517,6 +517,10 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
 			\State \Return new LotteryQueue(transferPriority)
 		\EndProcedure
 		\Procedure{getThreadState}{KThread thread}
+            \If{\texttt{thread} has not got a \texttt{ThreadState}}
+                \State give it a new one
+            \EndIf
+            \State \Return \texttt{ThreadState} of \texttt{thread}
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm*}
@@ -524,8 +528,23 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
 	\caption{In class LotteryQueue}
 	\begin{algorithmic}
 		\Procedure{pickNextThread}{}
+            \State sum the priority of the threads in queue
+            \State generate a random integer between 1 and the sum
+            \State find the thread that has the chosen ticket
+            \State \Return that thread
 		\EndProcedure
 		\Procedure{updateDonatingPriority}{}
+            \State sum the priority of the threads in queue to get the new donating priority
+            \If{new one = old one}
+                \State \Return
+            \EndIf
+            \If{occupied}
+                \State delete from the thread
+            \EndIf
+            \State donating priority $\gets$ new donating priority
+            \If{occupied}
+                \State add to the thread
+            \EndIf
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm*}
@@ -533,6 +552,17 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
 	\caption{In class LotteryScheduler.ThreadState}
 	\begin{algorithmic}
 		\Procedure{updateEffectivePriority}{}
+            \State sum the priority of the queues waiting for this thread to get the new effective priority
+            \If{new one = old one}
+                \State \Return
+            \EndIf
+            \If{waiting}
+                \State delete from the queue
+            \EndIf
+            \State effective priority $\gets$ new effective priority
+            \If{waiting}
+                \State add to the queue
+            \EndIf
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm*}
