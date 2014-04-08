@@ -499,7 +499,7 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
                 Override functions
                 \begin{itemize}
                     \item \texttt{pickNextThread}
-                    \item \texttt{updateDonatingPriority}
+%                    \item \texttt{updateDonatingPriority}
                 \end{itemize}
         \end{itemize}
     \item
@@ -510,6 +510,7 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
         \end{itemize}
 \end{itemize}
 \subsection{Description}
+\textbf{\texttt{The following code based on previous project}}
 \begin{algorithm*}
 	\caption{In class LotteryScheduler}
 	\begin{algorithmic}
@@ -567,4 +568,10 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
 	\end{algorithmic}
 \end{algorithm*}
 \subsection{Test}
+We can use the similar test that we have used in testing \texttt{PriorityScheduler}.
+\begin{compactitem}
+	\item Set up serveral threads with random priorities associated with one condition. And test whether they execute in decreasing order.
+	\item Set up serveral threads with random priorities associated with mutiple conditions. And test whether they execute in decreasing order. And
+		Test by printing that whether the waiting thread properly donate its priority and whether the quit-holding thread recover its priority.
+\end{compactitem}
 \end{document}
