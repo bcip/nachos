@@ -499,7 +499,7 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
                 Override functions
                 \begin{itemize}
                     \item \texttt{pickNextThread}
-                    \item \texttt{updateDonatingPriority}
+%                    \item \texttt{updateDonatingPriority}
                 \end{itemize}
         \end{itemize}
     \item 
@@ -510,6 +510,7 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
         \end{itemize}
 \end{itemize}
 \subsection{Description}
+\textbf{\texttt{The following code based on previous project}}
 \begin{algorithm*}
 	\caption{In class LotteryScheduler}
 	\begin{algorithmic}
@@ -524,17 +525,47 @@ In this task, we mainly need to implement \texttt{LotteryScheduler} by extending
 	\caption{In class LotteryQueue}
 	\begin{algorithmic}
 		\Procedure{pickNextThread}{}
+		\State \texttt{allTickets}$\leftarrow$0
+		\State \texttt{ticketList}$\leftarrow$\texttt{new LinkedList<Integer>}
+		\State \texttt{threadList}$\leftarrow$\texttt{new LinkedList<ThreadState>}
+		\For{all \texttt{ThreadState ts} in \texttt{priorityQueue}}
+			\State \texttt{tsTicket}$\leftarrow$\texttt{ts.updateEffectivePriority}
+			\State \texttt{allTickets}$\leftarrow$\texttt{allTickets}+\texttt{tsTicket}
+			\State \texttt{ticketList.add(tsTicket)}
+			\State \texttt{threadList.add(ts)}
+		\EndFor
+		\State \texttt{pickedTicket}$\leftarrow$\texttt{Random(allTickets)}
+		\State \texttt{count}$\leftarrow$0
+		\State \texttt{i}$\leftarrow$0
+		\While{\texttt{count} less than \texttt{pickedTicket}}
+			\State \texttt{count}$\leftarrow$\texttt{ticketList.get(i)+count}
+			\State \texttt{i}$\leftarrow$\texttt{i+1}
+		\EndWhile
+		\State \Return \texttt{threadList.get(i)}
 		\EndProcedure
-		\Procedure{updateDonatingPriority}{}
-		\EndProcedure
+%		\Procedure{updateDonatingPriority}{}
+%		\EndProcedure
 	\end{algorithmic}
 \end{algorithm*}
 \begin{algorithm*}
 	\caption{In class LotteryScheduler.ThreadState}
 	\begin{algorithmic}
 		\Procedure{updateEffectivePriority}{}
+		\State \texttt{biasEP}$\leftarrow$0
+		\For{all \texttt{PriorityQueue} \texttt{pq} in the \texttt{TreeSet<PriorityQueue>} \texttt{acquires}}
+			\For{all \texttt{ThreadState} \texttt{ts} in \texttt{pq}}
+				\texttt{biaEP} $\leftarrow$ \texttt{biaEP} + \texttt{ts.updateEffectivePriority}
+			\EndFor
+		\EndFor
+		\State \texttt{waitingFor.occupyingThread.updateEffectivePriority}
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm*}
 \subsection{Test}
+We can use the similar test that we have used in testing \texttt{PriorityScheduler}.
+\begin{compactitem}
+	\item Set up serveral threads with random priorities associated with one condition. And test whether they execute in decreasing order.
+	\item Set up serveral threads with random priorities associated with mutiple conditions. And test whether they execute in decreasing order. And
+		Test by printing that whether the waiting thread properly donate its priority and whether the quit-holding thread recover its priority.
+\end{compactitem}
 \end{document}
