@@ -48,23 +48,18 @@ Wang Qinshi   \\   2012011311}
 In this task, we mainly need to implement system calls related to file system such as \texttt{create, open, read, write, close} and \texttt{unlink}
 .
 \subsection{Correctness Constraints}
-\begin{enumerate}
-	\item[$\bullet$] \texttt{handleCreate: }
-		\begin{compactitem}
-		\item Call the method \texttt{open(String name, boolean true} provided in \texttt{FileSystem}.
-		\item Save the returned \texttt{Openfile} by above method.
-		\end{compactitem}
-	\item[$\bullet$] \texttt{handleOpen:} Same as \texttt{handleCreate} but call method \texttt{open(String name, boolean true} provided in \texttt{FileSystem}.
-	\item[$\bullet$] \texttt{handleRead, handleWrite:} Keep a record for the location of your reading.
-	\item[$\bullet$] \texttt{handleClose:} Note that a given file
-descriptor can be reused if the file associated with it is closed, and that different processes can
-use the same file descriptor (i.e. integer) to refer to different files.
-	\item[$\bullet$] \texttt{handleUnlink:} Need to judge whether there is still a process have the file open.
-	\item[$\bullet$] \texttt{handleHalt:} Need to judge whether the caller is the root process.
-\end{enumerate}
+\begin{compactitem}
+\item Implement \texttt{creat, open, read, write, close} and \texttt{unlink}.
+\item Bullet-proof those system calls.
+\item \texttt{halt} can only be called from root process.
+\item Each open file must have unique fiel descriptor and including standart input and output.
+\item Be able to open 16 files simultaneously in a single process.
+\end{compactitem}
 \subsection{Declaration}
 \begin{compactitem}
-\item Declare an enclapsed \text{FileDescriptor} class recording the \texttt{OpenFile}, location, a \texttt{boolean} \texttt{remove}.
+\item Declare new class \texttt{FileManager} in \texttt{UserKernel}. Remember each file's name, how many process open it, and whether it should 
+	be unlinked.
+\item Declare an enclapsed \text{FileDescriptor} class recording the \texttt{OpenFile}, location.
 \item Declare an array with length 16 of \texttt{FileDescriptor} \texttt{fileDescriptor}, prepare two \texttt{Openfile}: standart input and output.
 \item \texttt{Create:}
 	\begin{enumerate}
@@ -99,14 +94,29 @@ use the same file descriptor (i.e. integer) to refer to different files.
 	\end{compactitem}
 \end{compactitem}
 \subsection{Description}
-Shown in pseudocode.
+In the form of pseudocode,
+\begin{lstlisting}
+class UserKernel {
+	class FileManager {
+		class FileNode {
+			String fileName;
+			int times;
+			boolean unlink;
+		}
+		public FileManager() {
+			new a List of Map fileMapList between fileName and FileNode
+		}
+	}
+}
+\end{lstlisting}
 \begin{algorithm}
+		\caption{In class UserProcess}
     \begin{algorithmic}
         \Procedure{handleHalt()}{}
             \If{this process is not "root" process}
                 \State return -1
             \EndIf
-            \State make the \texttt{halt} system call
+						\State make \texttt{Machine.halt} call.
         \EndProcedure
     \end{algorithmic}
     \begin{algorithmic}
@@ -120,8 +130,9 @@ Shown in pseudocode.
                 \If{no empty element}
                     \State return -1
                 \Else
-                    \State write the \texttt{FileDescriptor}
-                    \State return the index
+									\State write the \texttt{FileDescriptor} in \texttt{fileDescriptor}.
+									\State add this file into \texttt{UserKernel.FileManager}
+                   \State return the index
                 \EndIf
             \EndIf
         \EndProcedure
@@ -135,11 +146,13 @@ Shown in pseudocode.
             \If{temp is null}
                 \State return -1
             \Else
-                \State find the empty element in the array of \texttt{FileDescriptor}
+                \State find the empty element in \texttt{fileDescriptor}
                 \If{no empty element}
                     \State return -1
                 \Else
-                    \State write the \texttt{FileDescriptor}
+								\State write the \texttt{FileDescriptor} in \texttt{fileDescriptor}
+										\State add the file into \texttt{fileMapList} \texttt{UserKernel.fileManager} if not exists,
+										\State if exists, only increase \texttt{file.times} by 1.
                     \State return the index
                 \EndIf
             \EndIf
@@ -180,7 +193,10 @@ Shown in pseudocode.
             \If{the index is out of range}
                 \State return -1
             \EndIf
-            \State close the file at the index
+						\State close the file at the index 
+						\State reduce \texttt{fileNode.times} by 1 in \texttt{UserKernel.fileManager}
+						\State if \texttt{fileNode.times} turns to be 0, remove from the \texttt{fileMapList}.
+						\State if \texttt{fileNode.times} equals 0 and \texttt{fileNode.unlink} is \texttt{true}, unlink the file.
             \If{this file is denote as remove}
                 \If{rest of \texttt{FileDescriptor} doesn't contain this file}
                     \State remove this file
@@ -191,25 +207,35 @@ Shown in pseudocode.
     \begin{algorithmic}
         \Procedure{handleUnlink}{int file}
             \State filename $\leftarrow$ get the name of file from virtual memory
-            \If{this filename is not contain in the array of \texttt{FileDescriptor}}
+						\If{this filename is not contain in \texttt{UserKernel.fileManager}}
                 \State remove this file
             \Else
-                \State denote the elements in array of \texttt{FileDescriptor} equal filename as remove
+						\State find \texttt{fileNode} of \texttt{file} in \texttt{UserKernel.fileManager}.
+						\State mark \texttt{fileNode.unlink} as \texttt{true} in \texttt{UserKernel.fileManager} 
             \EndIf
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
 
 \subsection{Test}
-
+Test with c code through MIPS. We can call methods \texttt{close, creat, unlink, write, read, open} in a c file with different orders and see if 
+the operations meet the requirements.
+\begin{compactitem}
+\item Normal create, close, write, read, open, unlink
+\item Test Bullet-proof: close, write, read, unlink before file exists
+\item Test Bullet-proof: close, write, read before open
+\item Test Bullet-proof: test with invalid parameters.
+\end{compactitem}
 \section{Implement Support for Multiprogramming}
 \subsection{Overview}
 In this task, we mainly need to implement support for multiprogramming i.e. alter \texttt{readVirtualMemory, writeVirtualMemory, loadSections,
 unloadSections} to make sure that memory for processes are used properly and efficiently.
 \subsection{Correctness Constraints}
 \begin{compactitem}
-\item Efficiency of memory: we can't simply allocate pages in a contiguous block and we need to make sure that a process's memory is freed on exit.
-\item Maintaince of pageTable for user process. Methods
+\item implement system calss \texttt{writeVirtualMemory, readVirtualMemory, load, unload}.
+\item efficiently use memory.
+\item COFF's \texttt{TranslationEntry} should be readonly, otherwise, should throw exception.
+\item set up pageTable structure with load sections.
 \end{compactitem}
 \subsection{Declaration}
 \begin{compactitem}

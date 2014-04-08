@@ -48,6 +48,7 @@ public class ThreadedKernel extends Kernel {
 	 * here.
 	 */
 	public void selfTest() {
+		/*
 		System.out.println("Test Join:");
 		KThread.selfTest();
 		System.out.println("*************************************");
@@ -74,6 +75,7 @@ public class ThreadedKernel extends Kernel {
 		if (Machine.bank() != null) {
 			ElevatorBank.selfTest();
 		}
+		*/
 	}
 
 	/**
