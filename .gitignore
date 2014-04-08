@@ -6,6 +6,9 @@
 *.swp
 *.*~
 *.class
+*.bak
+*.bbl
+*.blg
 !*.tex
 !*.txt
 
