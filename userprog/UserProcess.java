@@ -497,7 +497,6 @@ public class UserProcess {
 		if(UserKernel.unlinkFile(fileName)){
 			return 0;
 		}
-		
 		return -1;
 	}
 
@@ -580,11 +579,19 @@ public class UserProcess {
 	public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 		switch (syscall) {
 		case syscallHalt:
-			System.out.println(syscall);
 			return handleHalt();
 		case syscallCreate:
-			System.out.println(syscall + " " + a0);
 			return handleCreate(a0);
+		case syscallOpen:
+			return handleOpen(a0);
+		case syscallRead:
+			return handleRead(a0, a1, a2);
+		case syscallWrite:
+			return handleWrite(a0, a1, a2);
+		case syscallClose:
+			return handleClose(a0);
+		case syscallUnlink:
+			return handleUnlink(a0);
 		case syscallExit:
 			return handleExit(a0);
 
