@@ -2,6 +2,7 @@
 *.log
 *.pdf
 *.gz
+*.tar
 *.toc
 *.swp
 *.*~
