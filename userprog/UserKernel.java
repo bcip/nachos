@@ -126,34 +126,34 @@ public class UserKernel extends ThreadedKernel {
 	
 	private static HashMap<String, FileManager> fileManager = new HashMap<String, FileManager>();
 	
-	private static Lock fileLock = new Lock();
+	//private static Lock fileLock = new Lock();
 	
 	public static boolean createFile(String filename){
-		fileLock.acquire();
+		boolean status = Machine.interrupt().disable();
 		if(!fileManager.containsKey(filename)){
 			fileManager.put(filename, new FileManager());
-			fileLock.release();
+			Machine.interrupt().restore(status);
 			return true;
 		}else{
-			fileLock.release();
+			Machine.interrupt().restore(status);
 			return false;
 		}
 	}
 	
 	public static boolean openFile(String filename){
-		fileLock.acquire();
+		boolean status = Machine.interrupt().disable();
 		FileManager tmp = fileManager.get(filename);
 		if(tmp != null){
 			tmp.count++;
-			fileLock.release();
+			Machine.interrupt().restore(status);
 			return true;
 		}
-		fileLock.release();
+		Machine.interrupt().restore(status);
 		return false;
 	}
 	
 	public static boolean closeFile(String filename){
-		fileLock.acquire();
+		boolean status = Machine.interrupt().disable();
 		FileManager tmp = fileManager.get(filename);
 		if(tmp != null){
 			if(tmp.count > 0){
@@ -163,18 +163,18 @@ public class UserKernel extends ThreadedKernel {
 				fileSystem.remove(filename);
 				fileManager.remove(filename);
 			}
-			fileLock.release();
+			Machine.interrupt().restore(status);
 			return true;
 		}
-		fileLock.release();
+		Machine.interrupt().restore(status);
 		return false;
 	}
 	
 	public static boolean unlinkFile(String filename){
-		fileLock.acquire();
+		boolean status = Machine.interrupt().disable();
 		FileManager tmp = fileManager.get(filename);
 		if(tmp == null){
-			fileLock.release();
+			Machine.interrupt().restore(status);
 			return false;
 		}
 		
@@ -185,7 +185,7 @@ public class UserKernel extends ThreadedKernel {
 		else{
 			tmp.unlink = true;
 		}
-		fileLock.release();
+		Machine.interrupt().restore(status);
 		return true;
 	}
 }
