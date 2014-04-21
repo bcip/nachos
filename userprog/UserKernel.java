@@ -34,6 +34,10 @@ public class UserKernel extends ThreadedKernel {
 				exceptionHandler();
 			}
 		});
+
+		pageLock = new Lock();
+		pageLock.acquire();
+		pageLock.release();
 	}
 
 	/**
@@ -188,4 +192,7 @@ public class UserKernel extends ThreadedKernel {
 		Machine.interrupt().restore(status);
 		return true;
 	}
+
+	private Lock pageLock;
+
 }
