@@ -383,7 +383,7 @@ public class UserProcess {
 		String fileName = readVirtualMemoryString(address, 256);
 		if (fileName == null)
 			return -1;
-		int empty = 2;
+		int empty = 0;
 		for (; empty < 16; empty++) {
 			if (fileList[empty] == null) {
 				break;
@@ -393,7 +393,7 @@ public class UserProcess {
 			return -1;
 		}
 		OpenFile newFile = ThreadedKernel.fileSystem.open(fileName, true);
-		if(!UserKernel.createFile(fileName)){
+		if (!UserKernel.createFile(fileName)) {
 			return -1;
 		}
 		if (newFile == null) {
@@ -403,14 +403,14 @@ public class UserProcess {
 			return empty;
 		}
 	}
-	
-	public int handleOpen(int address){
+
+	public int handleOpen(int address) {
 		if (address < 0)
 			return -1;
 		String fileName = readVirtualMemoryString(address, 256);
 		if (fileName == null)
 			return -1;
-		int empty = 2;
+		int empty = 0;
 		for (; empty < 16; empty++) {
 			if (fileList[empty] == null) {
 				break;
@@ -420,7 +420,7 @@ public class UserProcess {
 			return -1;
 		}
 		OpenFile newFile = ThreadedKernel.fileSystem.open(fileName, false);
-		if(!UserKernel.openFile(fileName)){
+		if (!UserKernel.openFile(fileName)) {
 			return -1;
 		}
 		if (newFile == null) {
@@ -430,71 +430,75 @@ public class UserProcess {
 			return empty;
 		}
 	}
-	
-	public int handleRead(int index, int address, int bufsize){
-		if(index < 0 || index >= 16 || fileList[index] == null
-				|| address < 0 || bufsize < 0){
+
+	public int handleRead(int index, int address, int bufsize) {
+		if (index < 0 || index >= 16 || fileList[index] == null || address < 0
+				|| bufsize < 0) {
 			return -1;
 		}
-		
+
 		FileDescriptor tmp = fileList[index];
 		byte[] buffer = new byte[bufsize];
 		int ret = tmp.file.read(buffer, 0, bufsize);
-		
-		if(ret < 0){
+
+		if (ret < 0) {
 			return -1;
-		}
-		else{
-			writeVirtualMemory(address, buffer);
+		} else {
+			int numBytesWrited = writeVirtualMemory(address, buffer);
+			if(numBytesWrited < bufsize)
+				return -1;
 			return ret;
 		}
 	}
-	
-	public int handleWrite(int index, int address, int bufsize){
-		if(index < 0 || index >= 16 || fileList[index] == null
-				|| address < 0 || bufsize < 0){
+
+	public int handleWrite(int index, int address, int bufsize) {
+		if (index < 0 || index >= 16 || fileList[index] == null || address < 0
+				|| bufsize < 0) {
 			return -1;
 		}
-		
+
 		FileDescriptor tmp = fileList[index];
 		byte[] buffer = new byte[bufsize];
-		
+
 		int byteSize = readVirtualMemory(address, buffer);
-		int ret = tmp.file.write(buffer, 0, byteSize);
-		
-		if(ret < 0){
+		if(byteSize < bufsize)
 			return -1;
-		}
-		else{
+		int ret = tmp.file.write(buffer, 0, byteSize);
+
+		if (ret < 0) {
+			return -1;
+		} else {
 			return ret;
 		}
 	}
-	
-	public int handleClose(int index){
-		if(index < 0 || index >= 16 || fileList[index] == null){
+
+	public int handleClose(int index) {
+		if (index < 0 || index >= 16 || fileList[index] == null) {
 			return -1;
 		}
-		
+
 		FileDescriptor tmp = fileList[index];
 		String filename = tmp.filename;
 		tmp.file.close();
 		fileList[index] = null;
-		
-		if(UserKernel.closeFile(filename)){
+
+		if (UserKernel.closeFile(filename)) {
 			return 0;
 		}
-		
+
 		return -1;
 	}
-	
-	public int handleUnlink(int address){
-		if(address < 0){
+
+	public int handleUnlink(int address) {
+		if (address < 0) {
 			return -1;
 		}
-		
+
 		String fileName = readVirtualMemoryString(address, 256);
-		
-		if(UserKernel.unlinkFile(fileName)){
+		if(fileName == null)
+			return -1;
+
+		if (UserKernel.unlinkFile(fileName)) {
 			return 0;
 		}
 		return -1;
@@ -527,7 +531,7 @@ public class UserProcess {
 	 * <td><tt>void exit(int status);</tt></td>
 	 * </tr>
 	 * <tr>
-		public int pos = 0;
+	 * public int pos = 0;
 	 * <td>2</td>
 	 * <td><tt>int  exec(char *name, int argc, char **argv);
 	 * 								</tt></td>
@@ -630,12 +634,12 @@ public class UserProcess {
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
-	
-	public class FileDescriptor{
+
+	public class FileDescriptor {
 		public String filename = null;
 		public OpenFile file = null;
-		
-		public FileDescriptor(String filename, OpenFile file){
+
+		public FileDescriptor(String filename, OpenFile file) {
 			this.file = file;
 			this.filename = filename;
 		}
