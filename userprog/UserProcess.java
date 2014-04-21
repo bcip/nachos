@@ -25,6 +25,19 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+    boolean status = Machine.interrupt().disable();
+    processId = (processNumber++);
+    fileList = new OpenFile[16];
+    if(parentProcess == null){
+    	stdin = UserKernel.console.openForReading();
+    	stdout = UserKernel.console.openForWriting();
+    }else{
+    	stdin = parentProcess.stdin;
+    	stdout = parentProcess.stdout;
+    }
+    fileList[0] = stdin;
+    fileList[1] = stdout;
+    Machine.interrupt().restore(status);
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
@@ -342,12 +355,41 @@ public class UserProcess {
      */
     private int handleHalt() {
 
-	Machine.halt();
+    	if(processId != 0)
+    		return -1;
+    	Machine.halt();
 
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
 
+    private int handleCreate(int address){
+    	if(address < 0)
+    		return -1;
+    	String fileName = readVirtualMemoryString(address, 256);
+    	if(fileName == null)
+    		return -1;
+    	int empty = 2;
+    	for(; empty < 16; empty++){
+    		if(fileList[empty] == null){
+    			break;
+    		}
+    	}
+    	if(empty == 16){
+    		return -1;
+    	}
+    	OpenFile newFile = ThreadedKernel.fileSystem.open(fileName, true);
+    	if(newFile == null){
+    		return -1;
+    	}else{
+    		fileList[empty] = newFile;
+    		return empty;
+    	}
+    }
+    
+    private int handleExit(int status){
+    	return status;
+    }
 
     private static final int
         syscallHalt = 0,
@@ -392,12 +434,18 @@ public class UserProcess {
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 	switch (syscall) {
 	case syscallHalt:
+		System.out.println(syscall);
 	    return handleHalt();
+	case syscallCreate:
+		System.out.println(syscall+" "+a0);
+		return handleCreate(a0);
+	case syscallExit:
+		return handleExit(a0);
 
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
-	    Lib.assertNotReached("Unknown system call!");
+	    Lib.assertNotReached("Unknown system call!" + syscall);
 	}
 	return 0;
     }
@@ -432,6 +480,8 @@ public class UserProcess {
 	}
     }
 
+    private OpenFile[] fileList;
+    
     /** The program being run by this process. */
     protected Coff coff;
 
@@ -448,4 +498,12 @@ public class UserProcess {
 
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+    
+    private final int processId;
+    private static int processNumber = 0;
+    
+    protected OpenFile stdin;
+    protected OpenFile stdout;
+    
+    private UserProcess parentProcess;
 }
