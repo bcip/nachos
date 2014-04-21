@@ -3,8 +3,6 @@
 package nachos.threads;
 
 import nachos.machine.*;
-import nachos.threads.PriorityScheduler.PriorityQueue;
-import nachos.threads.PriorityScheduler.ThreadState;
 
 import java.util.TreeSet;
 import java.util.HashSet;
@@ -470,5 +468,295 @@ public class LotteryScheduler extends PriorityScheduler {
 		 * before.
 		 */
 		protected long enqueueTime;
+	}
+
+	private static void test1() {
+		System.out.println("PriorityScheduler.test1() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test1() ends.");
+	}
+
+	private static void test2() {
+		System.out.println("PriorityScheduler.test2() begins.");
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		thread0.join();
+		thread1.join();
+		System.out.println("PriorityScheduler.test2() ends.");
+	}
+
+	private static void test3() {
+		System.out.println("PriorityScheduler.test3() begins.");
+
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		/*
+		 * The main thread which has increased its priority is waiting for
+		 * thread1.
+		 */
+		ThreadedKernel.scheduler.increasePriority();
+		thread1.join();
+		thread0.join();
+		ThreadedKernel.scheduler.decreasePriority();
+
+		System.out.println("PriorityScheduler.test3() ends.");
+	}
+
+	private static void test4() {
+		System.out.println("PriorityScheduler.test4() begins.");
+
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+
+		Machine.interrupt().restore(intStatus);
+
+		thread0.fork();
+		thread1.fork();
+
+		/*
+		 * The main thread which has increased its priority is waiting for
+		 * thread1.
+		 */
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		thread1.join();
+		thread0.join();
+		ThreadedKernel.scheduler.decreasePriority();
+		ThreadedKernel.scheduler.decreasePriority();
+
+		System.out.println("PriorityScheduler.test4() ends.");
+	}
+
+	private static void test5() {
+		System.out.println("PriorityScheduler.test5() begins.");
+
+		KThread thread0 = new KThread(new PSTest(0));
+		KThread thread1 = new KThread(new PSTest(1));
+		KThread thread2 = new KThread(new PSTest(2));
+
+		thread0.setName("thread0");
+		thread1.setName("thread1");
+		thread2.setName("thread2");
+
+		/* Disable interrupt for convenience. */
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(thread0, 2);
+		ThreadedKernel.scheduler.setPriority(thread1, 2);
+		ThreadedKernel.scheduler.setPriority(thread2, 1);
+
+		thread0.fork();
+		thread1.fork();
+		thread2.fork();
+
+		/*
+		 * Priority of thread1 is changed later than thread2, but that thread is
+		 * enqueued earlier.
+		 */
+		ThreadedKernel.scheduler.setPriority(thread1, 1);
+
+		/* Wait until all the threads ends. */
+		thread0.join();
+		thread1.join();
+		thread2.join();
+
+		Machine.interrupt().restore(intStatus);
+
+		System.out.println("PriorityScheduler.test5() ends.");
+	}
+
+	private static class Competitor implements Runnable {
+		private int index;
+		private Communicator pubCom;
+		private Communicator priCom;
+
+		Competitor(int _index, Communicator _pubCom, Communicator _priCom) {
+			index = _index;
+			pubCom = _pubCom;
+			priCom = _priCom;
+		}
+
+		public void run() {
+			if (pubCom.listen() > 0)
+				priCom.speak(index);
+		}
+	}
+
+	private static class Referee implements Runnable {
+		private int capacity;
+		private Communicator pubCom;
+		private Communicator priCom;
+
+		Referee(int _capacity, Communicator _pubCom, Communicator _priCom) {
+			capacity = _capacity;
+			pubCom = _pubCom;
+			priCom = _priCom;
+		}
+
+		public void run() {
+			while (capacity > 0) {
+				pubCom.speak(capacity);
+				int temp = priCom.listen();
+				for (int i = 0; i < 5; i++) {
+					System.out.println("Competitor " + temp + " loop " + i);
+				}
+				capacity--;
+			}
+		}
+	}
+
+	private static void test6() {
+		Communicator pubCom = new Communicator();
+		Communicator priCom = new Communicator();
+		int capacity = 7;
+		KThread[] competitors = new KThread[10];
+		for (int i = 0; i < capacity; i++) {
+			competitors[i] = new KThread(new Competitor(i, pubCom, priCom));
+		}
+		KThread referee = new KThread(new Referee(capacity, pubCom, priCom));
+		boolean intStatus = Machine.interrupt().disable();
+		for (int i = 0; i < capacity; i++) {
+			int priority = (int) (Math.random() * 7);
+			ThreadedKernel.scheduler.setPriority(competitors[i], priority);
+			System.out
+					.println("Competitor " + i + " with priority " + priority);
+		}
+		for (int i = 0; i < capacity; i++)
+			competitors[i].fork();
+		referee.fork();
+		for (int i = 0; i < capacity; i++)
+			competitors[i].join();
+		referee.join();
+		Machine.interrupt().restore(intStatus);
+	}
+
+	private static class Joiner implements Runnable {
+		int length;
+		String name;
+
+		Joiner(int _length, String _name) {
+			length = _length;
+			name = _name;
+		}
+
+		public void run() {
+			for (int i = 0; i < length; i++)
+				System.out.println(name + " loop " + i);
+		}
+	}
+
+	private static class Joinee implements Runnable {
+		private KThread joiner;
+		int length;
+		String name;
+
+		Joinee(int _length, String _name, KThread _joiner) {
+			length = _length;
+			joiner = _joiner;
+			name = _name;
+		}
+
+		public void run() {
+			joiner.join();
+			for (int i = 0; i < length; i++)
+				System.out.println(name + " loop " + i);
+		}
+	}
+
+	private static void test7() {
+		KThread threadO = new KThread(new Joiner(2, "threadO"));
+		KThread threadL = new KThread(new Joinee(2, "threadL", threadO));
+		KThread threadM = new KThread(new Joinee(10, "threadM", threadO));
+		KThread threadH = new KThread(new Joinee(2, "threadH", threadL));
+
+		threadH.setName("threadH");
+		threadM.setName("threadM");
+		threadL.setName("threadL");
+		threadO.setName("threadO");
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		ThreadedKernel.scheduler.setPriority(threadO, 7);
+		ThreadedKernel.scheduler.setPriority(threadH, 7);
+		ThreadedKernel.scheduler.setPriority(threadM, 4);
+		ThreadedKernel.scheduler.setPriority(threadL, 1);
+
+		threadM.fork();
+		threadL.fork();
+		threadH.fork();
+		threadO.fork();
+		threadO.join();
+		threadM.join();
+		threadL.join();
+		threadH.join();
+
+		Machine.interrupt().restore(intStatus);
+	}
+
+	public static void selfTest() {
+		test1();
+		test2();
+		test3();
+		test4();
+		test5();
+		test6();
+		test7();
+	}
+
+	private static class PSTest implements Runnable {
+		private int index;
+
+		PSTest(int _index) {
+			index = _index;
+		}
+
+		public void run() {
+			int i;
+			boolean intStatus = Machine.interrupt().disable();
+			System.out.println("EffectivePriority of thread" + index + " is "
+					+ ThreadedKernel.scheduler.getEffectivePriority());
+			Machine.interrupt().restore(intStatus);
+			for (i = 0; i < 5; i++) {
+				System.out.println("PSTest " + index + " loop " + i);
+				KThread.yield();
+			}
+		}
 	}
 }
