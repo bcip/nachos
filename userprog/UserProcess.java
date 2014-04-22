@@ -647,6 +647,18 @@ public class UserProcess {
 		exitMap.remove(child.processId);
 		exitMapLock.release();
 		
+		if(exitstatus == unknowException){
+			return 0;
+		}
+		
+		byte[] buffer = new byte[4];
+		Lib.bytesFromInt(buffer, 0, exitstatus);
+		int numOfBytesTransfer = writeVirtualMemory(status, buffer);
+		if(numOfBytesTransfer == 4){
+			return 1;
+		}else{
+			return 1;
+		}
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
