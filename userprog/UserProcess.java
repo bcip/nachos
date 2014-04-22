@@ -7,6 +7,9 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.*;
+
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 /**
  * Encapsulates the state of a user process that is not contained in its user
@@ -37,6 +40,9 @@ public class UserProcess {
 		}
 		fileList[0] = new FileDescriptor(null, stdin);
 		fileList[1] = new FileDescriptor(null, stdout);
+		childList = new LinkedList<UserProcess>();
+		exitMap = new HashMap<Integer, Integer>();
+		exitMapLock = new Lock();
 		Machine.interrupt().restore(status);
 		int numPhysPages = Machine.processor().getNumPhysPages();
 		pageTable = new TranslationEntry[numPhysPages];
@@ -69,7 +75,8 @@ public class UserProcess {
 		if (!load(name, args))
 			return false;
 
-		new UThread(this).setName(name).fork();
+		thread = new UThread(this);
+		thread.setName(name).fork();
 
 		return true;
 	}
@@ -592,7 +599,56 @@ public class UserProcess {
 	}
 
 	private int handleExit(int status) {
+		if(parent != null){
+			parent.childList.remove(this);
+		}
+		unloadSections();
+		if(parent != null){
+			parent.exitMapLock.acquire();
+			parent.exitMap.put(processId, status);
+			parent.exitMapLock.release();
+		}
+		ListIterator<UserProcess> iter = childList.listIterator();
+		
+		while(iter.hasNext()){
+			UserProcess child = iter.next();
+			child.parent = null;
+		}
+		exitMap.clear();
+		childList.clear();
+		if(processId == 0){
+			Kernel.kernel.terminate();
+		}else{
+			UThread.finish();
+		}
 		return status;
+	}
+	
+	private int handleJoin(int pid, int status){
+		UserProcess child = null;
+		ListIterator<UserProcess> iter = childList.listIterator();
+		while(iter.hasNext()){
+			UserProcess tmp = iter.next();
+			if(tmp.processId == pid){
+				child = tmp;
+			}
+		}
+		if(child == null){
+			return -1;
+		}
+		if(child.thread != null){
+			child.thread.join();
+		}
+		childList.remove(child);
+		child.parent = null;
+		exitMapLock.acquire();
+		if(!exitMap.containsKey(child.processId)){
+			return 0;
+		}
+		int exitstatus = exitMap.get(child.processId);
+		exitMap.remove(child.processId);
+		exitMapLock.release();
+		
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -762,9 +818,20 @@ public class UserProcess {
 
 	private final int processId;
 	private static int processNumber = 0;
+	
+	protected LinkedList<UserProcess> childList;
+	
+	protected UserProcess parent;
+	
+	protected UThread thread;
+	
+	protected Map<Integer, Integer> exitMap;
+	protected Lock exitMapLock;
 
 	protected OpenFile stdin;
 	protected OpenFile stdout;
 
 	private UserProcess parentProcess;
+	
+	
 }
