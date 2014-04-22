@@ -373,7 +373,7 @@ public class UserProcess {
 	protected boolean loadSections() {
 		UserKernel.pageLock.acquire();
 
-		if (numPages > UserKernel.getNumAvailablePages()) {
+		if (numPages > UserKernel.availablePages.size()) {
 			coff.close();
 			UserKernel.pageLock.release();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
