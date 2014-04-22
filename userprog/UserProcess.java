@@ -170,7 +170,7 @@ public class UserProcess {
 		 * 
 		 * return numSuccessedBytes;
 		 */
-		// for now, just assume that virtual addresses equal physical addresses
+
 		if (vaddr < 0 || vaddr >= numPages * pageSize)
 			return 0;
 		if (vaddr + length >= numPages * pageSize)
@@ -190,8 +190,8 @@ public class UserProcess {
 
 			int firstPhyAddress = Machine.processor().makeAddress(
 					pageTable[i].ppn, start);
-			System.arraycopy(memory, firstPhyAddress, data, offset
-					+ bytesTransferred, end - start);
+			System.arraycopy(memory, firstPhyAddress, data,
+					offset + bytesTransferred, end - start);
 			bytesTransferred += (end - start);
 			pageTable[i].used = true;
 		}
@@ -243,12 +243,12 @@ public class UserProcess {
 		 * 
 		 * return numSuccessedBytes;
 		 */
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+
+		if (vaddr < 0 || vaddr >= numPages * pageSize)
 			return 0;
-		int l = Machine.processor().makeAddress(numPages - 1, pageSize - 1);
-		if (length > l)
-			length = l;
+		if (vaddr + length >= numPages * pageSize)
+			length = numPages * pageSize - vaddr;
+
 		int bytesTransferred = 0;
 		int firstPage = Machine.processor().pageFromAddress(vaddr);
 		int lastPage = Machine.processor().pageFromAddress(vaddr + length);
@@ -257,25 +257,10 @@ public class UserProcess {
 			if (!pageTable[i].valid || pageTable[i].readOnly) {
 				break;
 			}
-			int firstAddress = Machine.processor().makeAddress(i, 0);
-			int lastAddress = Machine.processor().makeAddress(i, pageSize - 1);
 
-			int start = 0;
-			int end = 0;
-
-			if (vaddr <= firstAddress && vaddr + length >= lastAddress) {
-				start = 0;
-				end = pageSize - 1;
-			} else if (vaddr > firstAddress && vaddr + length >= lastAddress) {
-				start = vaddr - firstAddress;
-				end = pageSize - 1;
-			} else if (vaddr <= firstAddress && vaddr + length < lastAddress) {
-				start = 0;
-				end = (vaddr + length) - firstAddress;
-			} else {
-				start = vaddr - firstAddress;
-				end = vaddr + length - firstAddress;
-			}
+			int start = Math.max(Machine.processor().makeAddress(i, 0), vaddr);
+			int end = Math.min(Machine.processor().makeAddress(i, pageSize),
+					vaddr + length);
 
 			int firstPhyAddress = Machine.processor().makeAddress(
 					pageTable[i].ppn, start);
