@@ -752,7 +752,7 @@ public class UserProcess {
 		UserProcess child = UserProcess.newUserProcess();
 		if(child.execute(fileaddress, arguments)){
 			childList.add(child);
-			child.parent = this;
+			child.parentProcess = this;
 			return child.processId;
 		}else{
 			return -1;
