@@ -156,15 +156,47 @@ public class UserProcess {
 				&& offset + length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-
 		// for now, just assume that virtual addresses equal physical addresses
 		if (vaddr < 0 || vaddr >= memory.length)
 			return 0;
-
-		int amount = Math.min(length, memory.length - vaddr);
-		System.arraycopy(memory, vaddr, data, offset, amount);
-
-		return amount;
+		int l = Machine.processor().makeAddress(numPages-1, pageSize-1)-vaddr;
+		if(length > l)
+			length = l;
+		
+		int firstPage = Machine.processor().pageFromAddress(vaddr);
+		int lastPage = Machine.processor().pageFromAddress(vaddr+length);
+		int bytesTransferred = 0;
+		
+		for(int i = firstPage; i <= lastPage; i++){
+			if(!pageTable[i].valid){
+				break;
+			}
+			int firstAddress = Machine.processor().makeAddress(i, 0);
+			int lastAddress = Machine.processor().makeAddress(i, pageSize-1);
+			
+			int start = 0;
+			int end = 0;
+			
+			if(vaddr <= firstAddress && vaddr+length >= lastAddress){
+				start = 0;
+				end = pageSize-1;
+			}else if(vaddr > firstAddress && vaddr+length >= lastAddress){
+				start = vaddr-firstAddress;
+				end = pageSize-1;
+			}else if(vaddr <= firstAddress && vaddr+length < lastAddress){
+				start = 0;
+				end = (vaddr+length)-firstAddress;
+			}else{
+				start = vaddr-firstAddress;
+				end = vaddr+length-firstAddress;
+			}
+			
+			int firstPhyAddress = Machine.processor().makeAddress(pageTable[i].ppn, start);
+			System.arraycopy(memory, firstPhyAddress, data, offset+bytesTransferred, end-start);
+			bytesTransferred += (end-start);
+			pageTable[i].used = true;
+		}
+		return bytesTransferred;
 	}
 
 	/**
@@ -208,11 +240,44 @@ public class UserProcess {
 		// for now, just assume that virtual addresses equal physical addresses
 		if (vaddr < 0 || vaddr >= memory.length)
 			return 0;
-
-		int amount = Math.min(length, memory.length - vaddr);
-		System.arraycopy(data, offset, memory, vaddr, amount);
-
-		return amount;
+		int l = Machine.processor().makeAddress(numPages-1, pageSize-1);
+		if(length > l)
+			length = l;
+		int bytesTransferred = 0;
+		int firstPage = Machine.processor().pageFromAddress(vaddr);
+		int lastPage = Machine.processor().pageFromAddress(vaddr+length);
+		
+		for(int i = firstPage; i <= lastPage; i++){
+			if(!pageTable[i].valid || pageTable[i].readOnly){
+				break;
+			}
+			int firstAddress = Machine.processor().makeAddress(i, 0);
+			int lastAddress = Machine.processor().makeAddress(i, pageSize-1);
+			
+			int start = 0;
+			int end = 0;
+			
+			if(vaddr <= firstAddress && vaddr+length >= lastAddress){
+				start = 0;
+				end = pageSize-1;
+			}else if(vaddr > firstAddress && vaddr+length >= lastAddress){
+				start = vaddr-firstAddress;
+				end = pageSize-1;
+			}else if(vaddr <= firstAddress && vaddr+length < lastAddress){
+				start = 0;
+				end = (vaddr+length)-firstAddress;
+			}else{
+				start = vaddr-firstAddress;
+				end = vaddr+length-firstAddress;
+			}
+			
+			int firstPhyAddress = Machine.processor().makeAddress(pageTable[i].ppn, start);
+			System.arraycopy(data, offset+bytesTransferred, memory, firstPhyAddress, end-start);
+			bytesTransferred += (end-start);
+			pageTable[i].used = true;
+			pageTable[i].dirty = true;
+		}
+		return bytesTransferred;
 	}
 
 	/**
@@ -317,6 +382,16 @@ public class UserProcess {
 			return false;
 		}
 
+		UserKernel.pageLock.acquire();
+		
+		pageTable = new TranslationEntry[numPages];
+		for(int i = 0; i < numPages; i++){
+			int nextPage = UserKernel.availablePages.poll();
+			pageTable[i] = new TranslationEntry(i, nextPage, true, false, false, false);
+		}
+		
+		UserKernel.pageLock.release();
+		
 		// load sections
 		for (int s = 0; s < coff.getNumSections(); s++) {
 			CoffSection section = coff.getSection(s);
@@ -327,8 +402,7 @@ public class UserProcess {
 			for (int i = 0; i < section.getLength(); i++) {
 				int vpn = section.getFirstVPN() + i;
 
-				// for now, just assume virtual addresses=physical addresses
-				section.loadPage(i, vpn);
+				section.loadPage(i, pageTable[vpn].ppn);
 			}
 		}
 
@@ -339,6 +413,19 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		UserKernel.pageLock.acquire();
+		
+		for(int i = 0; i < numPages; i++){
+			UserKernel.availablePages.add(pageTable[i].ppn);
+		}
+		
+		UserKernel.pageLock.release();
+		
+		for(int i = 0; i < 16; i++){
+			if(fileList[i] != null){
+				handleClose(i);
+			}
+		}
 	}
 
 	/**
@@ -624,6 +711,15 @@ public class UserProcess {
 			processor.advancePC();
 			break;
 
+		case Processor.exceptionAddressError:
+		case Processor.exceptionBusError:
+		case Processor.exceptionIllegalInstruction:
+		case Processor.exceptionOverflow:
+		case Processor.exceptionPageFault:
+		case Processor.exceptionReadOnly:
+		case Processor.exceptionTLBMiss:
+			handleExit(-1);
+			break;
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: "
 					+ Processor.exceptionNames[cause]);

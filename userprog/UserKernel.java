@@ -3,6 +3,7 @@
 package nachos.userprog;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import nachos.machine.*;
@@ -37,6 +38,11 @@ public class UserKernel extends ThreadedKernel {
 
 		pageLock = new Lock();
 		pageLock.acquire();
+		availablePages = new LinkedList<Integer>();
+		int numPages = Machine.processor().getNumPhysPages();
+		for(Integer i = 0; i < numPages; i++){
+			availablePages.add(i);
+		}
 		pageLock.release();
 	}
 
@@ -193,6 +199,7 @@ public class UserKernel extends ThreadedKernel {
 		return true;
 	}
 
-	private Lock pageLock;
+	public static Lock pageLock;
+	public static LinkedList<Integer> availablePages;
 
 }
