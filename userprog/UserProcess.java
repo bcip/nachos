@@ -43,6 +43,7 @@ public class UserProcess {
 		exitMap = new HashMap<Integer, Integer>();
 		exitMapLock = new Lock();
 		Machine.interrupt().restore(status);
+		stdLock = new Lock();
 		// int numPhysPages = Machine.processor().getNumPhysPages();
 		// pageTable = new TranslationEntry[numPhysPages];
 		// for (int i = 0; i < numPhysPages; i++)
@@ -577,8 +578,10 @@ public class UserProcess {
 			if (numBytesRead < buffer.length) {
 				return -1;
 			} else {
+				stdLock.acquire();
 				int numBytesNewlyWrited = tmp.file.write(buffer, 0,
 						buffer.length);
+				stdLock.release();
 				numBytesWrited += numBytesRead;
 				address += numBytesRead;
 				if (numBytesNewlyWrited < numBytesRead)
@@ -980,4 +983,6 @@ public class UserProcess {
 	private static final int unknowSystemCall = -613;
 
 	private static final int maxBufSise = 1 << 20;
+
+	private static Lock stdLock;
 }
