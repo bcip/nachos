@@ -400,7 +400,7 @@ public class UserProcess {
 				 * TranslationEntry(vpn, UserKernel.nextAvailablePage(), true,
 				 * section.isReadOnly(), false, false);
 				 */
-				
+
 				pageTable[vpn].readOnly = section.isReadOnly();
 
 				section.loadPage(i, pageTable[vpn].ppn);
@@ -619,43 +619,54 @@ public class UserProcess {
 	}
 
 	private int handleExit(int status) {
-		if (parentProcess != null) {
-			parentProcess.childList.remove(this);
-		}
+		Machine.interrupt().disable();
+		
 		unloadSections();
+		
+		for(UserProcess child : childList){
+			child.parentProcess = null;
+		}
+		
 		if (parentProcess != null) {
 			parentProcess.exitMapLock.acquire();
 			parentProcess.exitMap.put(processId, status);
 			parentProcess.exitMapLock.release();
 		}
-		ListIterator<UserProcess> iter = childList.listIterator();
+		
+		/*ListIterator<UserProcess> iter = childList.listIterator();
 
 		while (iter.hasNext()) {
 			UserProcess child = iter.next();
 			child.parentProcess = null;
 		}
 		exitMap.clear();
-		childList.clear();
+		childList.clear();*/
 		if (processId == 0) {
 			Kernel.kernel.terminate();
 		} else {
 			UThread.finish();
 		}
-		return status;
+
+		Lib.assertNotReached();
+		
+		return -1;
 	}
 
 	private int handleJoin(int pid, int address) {
 		UserProcess child = null;
-		ListIterator<UserProcess> iter = childList.listIterator();
-		while (iter.hasNext()) {
-			UserProcess tmp = iter.next();
-			if (tmp.processId == pid) {
-				child = tmp;
+		
+		for(UserProcess curChild : childList){
+			if(curChild.processId == pid){
+				child = curChild;
+				break;
 			}
+				
 		}
+		
 		if (child == null) {
 			return -1;
 		}
+		
 		if (child.thread != null) {
 			child.thread.join();
 		}
@@ -860,7 +871,7 @@ public class UserProcess {
 		case Processor.exceptionPageFault:
 		case Processor.exceptionReadOnly:
 		case Processor.exceptionTLBMiss:
-			handleExit(-1);
+			handleExit(exceptionalExit);
 			break;
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: "
@@ -917,7 +928,8 @@ public class UserProcess {
 	private UserProcess parentProcess;
 	// private LinkedList<UserProcess> childProcesses;
 	// private UThread thread;
-
+	
+	private static final int exceptionalExit = -611;
 	private static final int unknowException = -612;
 	private static final int unknowSystemCall = -613;
 

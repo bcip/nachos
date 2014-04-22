@@ -1,0 +1,18 @@
+go to home
+
+
+nachos 5.0j initializing... config interrupt timer user-check
+lottery=true,depth=5,fanout=3,maxLocks=2,pJoin=50,release=5!!!!!!
+lottery true
+depth 5
+fanout 3
+maxLocks 2
+pJoin 50
+release 5
+grader
+success
+stty: standard input: Inappropriate ioctl for device
+stty: standard input: Inappropriate ioctl for device
+stty: standard input: Inappropriate ioctl for device
+go to home
+
