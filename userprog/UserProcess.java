@@ -709,15 +709,15 @@ public class UserProcess {
 		String fileaddress = readVirtualMemoryString(address, 256);
 
 		if (fileaddress == null) {
-			return -1;
+			return -2;
 		}
 
 		if (!fileaddress.endsWith("coff") && !fileaddress.endsWith("COFF")) {
-			return -1;
+			return -3;
 		}
 
 		if (numofArgs < 0) {
-			return -1;
+			return -4;
 		}
 
 		String[] arguments = new String[numofArgs];
@@ -725,13 +725,13 @@ public class UserProcess {
 			byte[] buffer = new byte[4];
 			int numofBytes = readVirtualMemory(argsOffset + (i * 4), buffer);
 			if (numofBytes != 4) {
-				return -1;
+				return -5;
 			}
 
 			int argAddr = Lib.bytesToInt(buffer, 0);
 			String argument = readVirtualMemoryString(argAddr, 256);
 			if (argument == null) {
-				return -1;
+				return -6;
 			}
 			arguments[i] = argument;
 		}
@@ -742,7 +742,7 @@ public class UserProcess {
 			child.parentProcess = this;
 			return child.processId;
 		} else {
-			return -1;
+			return -7;
 		}
 	}
 
