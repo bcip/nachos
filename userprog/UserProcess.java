@@ -660,7 +660,7 @@ public class UserProcess {
 		if (numOfBytesTransfer == 4) {
 			return 1;
 		} else {
-			return 1;
+			return 0;
 		}
 	}
 
