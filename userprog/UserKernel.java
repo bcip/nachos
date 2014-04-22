@@ -60,7 +60,7 @@ public class UserKernel extends ThreadedKernel {
 	 */
 	public void selfTest() {
 		super.selfTest();
-		UserProcess.selfTest();
+	//	UserProcess.selfTest();
 
 		System.out.println("Testing the console device. Typed characters");
 		System.out.println("will be echoed until q is typed.");
