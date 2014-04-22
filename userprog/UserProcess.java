@@ -741,7 +741,7 @@ public class UserProcess {
 			child.parentProcess = this;
 			return child.processId;
 		} else {
-			return -1;
+			return 0;
 		}
 	}
 
