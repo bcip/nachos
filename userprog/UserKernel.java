@@ -3,6 +3,7 @@
 package nachos.userprog;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.LinkedList;
 
@@ -36,11 +37,20 @@ public class UserKernel extends ThreadedKernel {
 			}
 		});
 		
-		Lib.assertTrue(availablePages.isEmpty());
+		/*Lib.assertTrue(availablePages.isEmpty());
 		
 		//no Lock needed, no other threads here when initializing.
 		while(availablePages.size() < Machine.processor().getNumPhysPages())
-			availablePages.add(availablePages.size());
+			availablePages.add(availablePages.size());*/
+
+		pageLock.acquire();
+		
+		int numPages = Machine.processor().getNumPhysPages();
+		for(Integer i = 0; i < numPages; i++){
+			availablePages.add(i);
+		}
+		
+		pageLock.release();
 	}
 
 	/**
@@ -154,9 +164,11 @@ public class UserKernel extends ThreadedKernel {
 			tmp.count++;
 			Machine.interrupt().restore(status);
 			return true;
+		}else{
+			fileManager.put(filename, new FileManager());
+			Machine.interrupt().restore(status);
+			return true;
 		}
-		Machine.interrupt().restore(status);
-		return false;
 	}
 	
 	public static boolean closeFile(String filename){
@@ -221,6 +233,6 @@ public class UserKernel extends ThreadedKernel {
 		pageLock.release();
 	}
 
-	static private LinkedList<Integer> availablePages = new LinkedList<Integer>(); 
-	static private Lock pageLock = new Lock();
+	public static LinkedList<Integer> availablePages = new LinkedList<Integer>(); 
+	public static Lock pageLock = new Lock();
 }
