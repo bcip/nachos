@@ -173,36 +173,20 @@ public class UserProcess {
 		// for now, just assume that virtual addresses equal physical addresses
 		if (vaddr < 0 || vaddr >= numPages * pageSize)
 			return 0;
-		if(vaddr + length >= numPages * pageSize)
+		if (vaddr + length >= numPages * pageSize)
 			length = numPages * pageSize - vaddr;
 
 		int firstPage = Machine.processor().pageFromAddress(vaddr);
-		int lastPage = Machine.processor().pageFromAddress(vaddr + length);
+		int lastPage = Machine.processor().pageFromAddress(vaddr + length - 1);
 		int bytesTransferred = 0;
 
 		for (int i = firstPage; i <= lastPage; i++) {
 			if (!pageTable[i].valid) {
 				break;
 			}
-			int firstAddress = Machine.processor().makeAddress(i, 0);
-			int lastAddress = Machine.processor().makeAddress(i, pageSize - 1);
-
-			int start = 0;
-			int end = 0;
-
-			if (vaddr <= firstAddress && vaddr + length >= lastAddress) {
-				start = 0;
-				end = pageSize - 1;
-			} else if (vaddr > firstAddress && vaddr + length >= lastAddress) {
-				start = vaddr - firstAddress;
-				end = pageSize - 1;
-			} else if (vaddr <= firstAddress && vaddr + length < lastAddress) {
-				start = 0;
-				end = (vaddr + length) - firstAddress;
-			} else {
-				start = vaddr - firstAddress;
-				end = vaddr + length - firstAddress;
-			}
+			int start = Math.max(Machine.processor().makeAddress(i, 0), vaddr);
+			int end = Math.min(Machine.processor().makeAddress(i, pageSize),
+					vaddr + length);
 
 			int firstPhyAddress = Machine.processor().makeAddress(
 					pageTable[i].ppn, start);
