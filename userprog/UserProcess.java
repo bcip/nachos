@@ -400,8 +400,8 @@ public class UserProcess {
 				 * TranslationEntry(vpn, UserKernel.nextAvailablePage(), true,
 				 * section.isReadOnly(), false, false);
 				 */
-
-				// for now, just assume virtual addresses=physical addresses
+				
+				pageTable[vpn].readOnly = section.isReadOnly();
 
 				section.loadPage(i, pageTable[vpn].ppn);
 			}
@@ -533,17 +533,27 @@ public class UserProcess {
 		}
 
 		FileDescriptor tmp = fileList[index];
-		byte[] buffer = new byte[bufsize];
-		int numBytesRead = tmp.file.read(buffer, 0, bufsize);
+		int numBytesWrited = 0;
 
-		if (numBytesRead < 0) {
-			return -1;
-		} else {
-			int numBytesWrited = writeVirtualMemory(address, buffer);
-			if (numBytesWrited < numBytesRead)
+		while (bufsize > 0) {
+			byte[] buffer = new byte[Math.min(bufsize, maxBufSise)];
+			bufsize -= buffer.length;
+			int numBytesRead = tmp.file.read(buffer, 0, buffer.length);
+
+			if (numBytesRead < 0) {
 				return -1;
-			return numBytesRead;
+			} else {
+				int numBytesNewlyWrited = writeVirtualMemory(address, buffer,
+						0, numBytesRead);
+				if (numBytesNewlyWrited < numBytesRead)
+					return -1;
+				numBytesWrited += numBytesRead;
+				address += numBytesRead;
+				if (numBytesRead < buffer.length)
+					break;
+			}
 		}
+		return numBytesWrited;
 	}
 
 	public int handleWrite(int index, int address, int bufsize) {
@@ -553,18 +563,27 @@ public class UserProcess {
 		}
 
 		FileDescriptor tmp = fileList[index];
-		byte[] buffer = new byte[bufsize];
+		int numBytesWrited = 0;
 
-		int byteSize = readVirtualMemory(address, buffer);
-		if (byteSize < bufsize)
-			return -1;
-		int ret = tmp.file.write(buffer, 0, byteSize);
+		while (bufsize > 0) {
+			byte[] buffer = new byte[Math.min(bufsize, maxBufSise)];
+			bufsize -= buffer.length;
+			int numBytesRead = readVirtualMemory(address, buffer);
 
-		if (ret < 0) {
-			return -1;
-		} else {
-			return ret;
+			if (numBytesRead < buffer.length) {
+				return -1;
+			} else {
+				int numBytesNewlyWrited = tmp.file.write(buffer, 0,
+						buffer.length);
+				numBytesWrited += numBytesRead;
+				address += numBytesRead;
+				if (numBytesNewlyWrited < numBytesRead)
+					break;
+			}
+
 		}
+
+		return numBytesWrited;
 	}
 
 	public int handleClose(int index) {
@@ -901,4 +920,6 @@ public class UserProcess {
 
 	private static final int unknowException = -612;
 	private static final int unknowSystemCall = -613;
+
+	private static final int maxBufSise = 1 << 20;
 }

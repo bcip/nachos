@@ -95,26 +95,9 @@ testID 8
 grader console
 8
 success
+success
 stty: standard input: Inappropriate ioctl for device
 stty: standard input: Inappropriate ioctl for device
-java.lang.OutOfMemoryError: Requested array size exceeds VM limit
-at nachos.userprog.UserProcess.handleWrite(UserProcess.java:556)
-at nachos.userprog.UserProcess.handleSyscall(UserProcess.java:795)
-at nachos.userprog.UserProcess.handleException(UserProcess.java:828)
-at nachos.userprog.UserKernel.exceptionHandler(UserKernel.java:107)
-at nachos.userprog.UserKernel$1.run(UserKernel.java:36)
-at nachos.machine.Processor$MipsException.handle(Processor.java:603)
-at nachos.machine.Processor.run(Processor.java:101)
-at nachos.userprog.UThread.runProgram(UThread.java:33)
-at nachos.userprog.UThread.access$000(UThread.java:13)
-at nachos.userprog.UThread$1.run(UThread.java:22)
-at nachos.threads.KThread.runThread(KThread.java:161)
-at nachos.threads.KThread.access$000(KThread.java:30)
-at nachos.threads.KThread$1.run(KThread.java:150)
-at nachos.machine.TCB.threadroot(TCB.java:235)
-at nachos.machine.TCB.access$100(TCB.java:25)
-at nachos.machine.TCB$1.run(TCB.java:93)
-at java.lang.Thread.run(Thread.java:744)
 stty: standard input: Inappropriate ioctl for device
 =============================
 nachos 5.0j initializing... config interrupt timer processor console user-check
@@ -123,14 +106,7 @@ testID 9
 grader console
 9
 success
-autograder assertion failed
-read() succeeded but arguments were bad
-Machine halting!
-Ticks: total 36652, kernel 36050, user 602
-Disk I/O: reads 0, writes 0
-Console I/O: reads 0, writes 69
-Paging: page faults 0, TLB misses 0
-Network I/O: received 0, sent 0
+success
 stty: standard input: Inappropriate ioctl for device
 stty: standard input: Inappropriate ioctl for device
 stty: standard input: Inappropriate ioctl for device
@@ -152,7 +128,7 @@ testID 11
 grader console
 11
 success
-ff11--YYXXXXFF
+ff11--YYKKMMCC
 stty: standard input: Inappropriate ioctl for device
 stty: standard input: Inappropriate ioctl for device
 nachos.machine.AssertionFailureError: test failed: incorrect console output
