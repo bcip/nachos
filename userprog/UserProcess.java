@@ -622,7 +622,7 @@ public class UserProcess {
 		return status;
 	}
 	
-	private int handleJoin(int pid, int status){
+	private int handleJoin(int pid, int address){
 		UserProcess child = null;
 		ListIterator<UserProcess> iter = childList.listIterator();
 		while(iter.hasNext()){
@@ -653,11 +653,56 @@ public class UserProcess {
 		
 		byte[] buffer = new byte[4];
 		Lib.bytesFromInt(buffer, 0, exitstatus);
-		int numOfBytesTransfer = writeVirtualMemory(status, buffer);
+		int numOfBytesTransfer = writeVirtualMemory(address, buffer);
 		if(numOfBytesTransfer == 4){
 			return 1;
 		}else{
 			return 1;
+		}
+	}
+	
+	private int handleExec(int address, int numofArgs, int argsOffset){
+		if(address < 0){
+			return -1;
+		}
+		
+		String fileaddress = readVirtualMemoryString(address, 256);
+		
+		if(fileaddress == null){
+			return -1;
+		}
+		
+		if(!fileaddress.endsWith("coff")&&!fileaddress.endsWith("COFF")){
+			return -1;
+		}
+		
+		if(numofArgs < 0){
+			return -1;
+		}
+		
+		String[] arguments = new String[numofArgs];
+		for(int i=0; i < numofArgs; i++){
+			byte[] buffer = new byte[4];
+			int numofBytes = readVirtualMemory(argsOffset + (i * 4),buffer);
+			if(numofBytes != 4){
+				return -1;
+			}
+			
+			int argAddr = Lib.bytesToInt(buffer, 0);
+			String argument = readVirtualMemoryString(argAddr, 256);
+			if(argument == null){
+				return -1;
+			}
+			arguments[i] = argument;
+		}
+		
+		UserProcess child = UserProcess.newUserProcess();
+		if(child.execute(fileaddress, arguments)){
+			childList.add(child);
+			child.parent = this;
+			return child.processId;
+		}else{
+			return -1;
 		}
 	}
 
