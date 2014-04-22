@@ -157,9 +157,11 @@ public class UserKernel extends ThreadedKernel {
 			tmp.count++;
 			Machine.interrupt().restore(status);
 			return true;
+		}else{
+			fileManager.put(filename, new FileManager());
+			Machine.interrupt().restore(status);
+			return true;
 		}
-		Machine.interrupt().restore(status);
-		return false;
 	}
 	
 	public static boolean closeFile(String filename){
