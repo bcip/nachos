@@ -162,7 +162,7 @@ public class UserProcess {
 				&& offset + length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-		
+
 		/*
 		 * int numSuccessedBytes = 0; while (numSuccessedBytes < length) { int
 		 * paddr = translate(vaddr, false); if (paddr < 0) break; data[offset] =
@@ -181,17 +181,14 @@ public class UserProcess {
 		int bytesTransferred = 0;
 
 		for (int i = firstPage; i <= lastPage; i++) {
-			if (!pageTable[i].valid) {
-				break;
-			}
-			int start = Math.max(Machine.processor().makeAddress(i, 0), vaddr);
-			int end = Math.min(Machine.processor().makeAddress(i, pageSize),
-					vaddr + length);
+			int start = Math.max(i * pageSize, vaddr);
+			int end = Math.min((i + 1) * pageSize, vaddr + length);
 
-			int firstPhyAddress = Machine.processor().makeAddress(
-					pageTable[i].ppn, start);
-			System.arraycopy(memory, firstPhyAddress, data,
-					offset + bytesTransferred, end - start);
+			int firstPhyAddress = translate(start, false);
+			if (firstPhyAddress < 0)
+				break;
+			System.arraycopy(memory, firstPhyAddress, data, offset
+					+ bytesTransferred, end - start);
 			bytesTransferred += (end - start);
 			pageTable[i].used = true;
 		}
@@ -234,7 +231,6 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0
 				&& offset + length <= data.length);
 
-
 		byte[] memory = Machine.processor().getMemory();
 
 		if (vaddr < 0 || vaddr >= numPages * pageSize)
@@ -244,19 +240,15 @@ public class UserProcess {
 
 		int bytesTransferred = 0;
 		int firstPage = Machine.processor().pageFromAddress(vaddr);
-		int lastPage = Machine.processor().pageFromAddress(vaddr + length);
+		int lastPage = Machine.processor().pageFromAddress(vaddr + length - 1);
 
 		for (int i = firstPage; i <= lastPage; i++) {
-			if (!pageTable[i].valid || pageTable[i].readOnly) {
+			int start = Math.max(i * pageSize, vaddr);
+			int end = Math.min((i + 1) * pageSize, vaddr + length);
+
+			int firstPhyAddress = translate(start, true);
+			if (firstPhyAddress < 0)
 				break;
-			}
-
-			int start = Math.max(Machine.processor().makeAddress(i, 0), vaddr);
-			int end = Math.min(Machine.processor().makeAddress(i, pageSize),
-					vaddr + length);
-
-			int firstPhyAddress = Machine.processor().makeAddress(
-					pageTable[i].ppn, start);
 			System.arraycopy(data, offset + bytesTransferred, memory,
 					firstPhyAddress, end - start);
 			bytesTransferred += (end - start);
@@ -363,7 +355,7 @@ public class UserProcess {
 
 		TranslationEntry translationEntry = pageTable[vpn];
 
-		if (write && translationEntry.readOnly)
+		if (!translationEntry.valid || write && translationEntry.readOnly)
 			return -1;
 
 		return translationEntry.ppn * pageSize + offset;

@@ -43,7 +43,9 @@ public class UserKernel extends ThreadedKernel {
 		while(availablePages.size() < Machine.processor().getNumPhysPages())
 			availablePages.add(availablePages.size());*/
 
+		pageLock = new Lock();
 		pageLock.acquire();
+		availablePages = new LinkedList<Integer>();
 		
 		int numPages = Machine.processor().getNumPhysPages();
 		for(Integer i = 0; i < numPages; i++){
@@ -233,6 +235,6 @@ public class UserKernel extends ThreadedKernel {
 		pageLock.release();
 	}
 
-	public static LinkedList<Integer> availablePages = new LinkedList<Integer>(); 
-	public static Lock pageLock = new Lock();
+	public static LinkedList<Integer> availablePages; 
+	public static Lock pageLock;
 }
