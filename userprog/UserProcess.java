@@ -890,7 +890,7 @@ public class UserProcess {
 		
 		UserProcess test = new UserProcess();
 		
-		test.load("halt.coff", new String[]{});
+		//test.load("halt.coff", new String[]{});
 		
 		int vaddr = Processor.makeAddress(1, 0) - 1;
 		int wint = 0x012345678;
