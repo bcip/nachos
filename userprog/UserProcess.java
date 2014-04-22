@@ -9,8 +9,6 @@ import nachos.userprog.*;
 import java.io.EOFException;
 import java.util.*;
 
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
-
 /**
  * Encapsulates the state of a user process that is not contained in its user
  * thread (or threads). This includes its address translation state, a file
@@ -744,7 +742,7 @@ public class UserProcess {
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
-			return handleExit(-1);
+			handleExit(unknowSystemCall);
 			Lib.assertNotReached("Unknown system call!" + syscall);
 		}
 		return 0;
@@ -784,7 +782,7 @@ public class UserProcess {
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: "
 					+ Processor.exceptionNames[cause]);
-			return handleExit(-1);
+			handleExit(unknowException);
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
@@ -834,6 +832,8 @@ public class UserProcess {
 	protected OpenFile stdout;
 
 	private UserProcess parentProcess;
-	
+
+	private static final int unknowException = -612;
+	private static final int unknowSystemCall = -613;
 	
 }
