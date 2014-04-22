@@ -160,10 +160,9 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0
 				&& offset + length <= data.length);
 
-		byte[] memory = Machine.processor().getMemory();
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+		if (vaddr < 0)
 			return 0;
+		byte[] memory = Machine.processor().getMemory();
 		int l = Machine.processor().makeAddress(numPages-1, pageSize-1)-vaddr;
 		if(length > l)
 			length = l;
@@ -240,14 +239,13 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0
 				&& offset + length <= data.length);
 
-		byte[] memory = Machine.processor().getMemory();
 
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+		if (vaddr < 0)
 			return 0;
 		int l = Machine.processor().makeAddress(numPages-1, pageSize-1);
 		if(length > l)
 			length = l;
+		byte[] memory = Machine.processor().getMemory();
 		int bytesTransferred = 0;
 		int firstPage = Machine.processor().pageFromAddress(vaddr);
 		int lastPage = Machine.processor().pageFromAddress(vaddr+length);
