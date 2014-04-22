@@ -1,6 +1,7 @@
 #include "syscall.h"
 
 int main(){
-    exec("bigarray.coff", 0, 0);
+   int a = exec("bigarray.coff", 0, 0);
+	 printf("bigarray: %d\n", a);
 	halt();
 }
