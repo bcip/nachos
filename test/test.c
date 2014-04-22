@@ -35,6 +35,18 @@ int main() {
 	printf("close a 2: %d\n", close(2));
 	printf("open a 10: %d\n", open("a"));
 
+	printf("test exec\n");
+	char* para1[] = {"p11", "p12"};
+	int* status;
+	printf("child 1 exec by join with return value %d and status %d\n", join(exec("child1.coff", 2, para1), status), *status); 
+	for(i = 0; i < 5; i++){
+		printf("parent in loop %d\n", i);
+	}
+	char* para2[] = {"p21", "p22", "p23"};
+	printf("child 2 exec by join with return value %d and status %d\n", join(exec("child2.coff", 3, para2), status), *status);
+	for(i = 5; i < 8; i++){
+		printf("parent in loop %d\n", i);
+	}
 	halt();
 	return 0;
 }
