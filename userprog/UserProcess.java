@@ -893,9 +893,9 @@ public class UserProcess {
 		
 		UserProcess test = new UserProcess();
 		
-		//test.load("halt.coff", new String[]{});
+		test.load("halt.coff", new String[]{});
 		
-		int vaddr = Processor.makeAddress(1, 0) - 1;
+		int vaddr = Processor.makeAddress(2,0) - 500;
 		int wint = 0x012345678;
 		int rint = 0;
 		
@@ -914,13 +914,13 @@ public class UserProcess {
 		}
 		
 		byte[] memory = Machine.processor().getMemory();
-		rbuffer[0] = memory[Processor.makeAddress(2,0)-1];
-		rbuffer[1] = memory[Processor.makeAddress(0,0)];
-		rbuffer[2] = memory[Processor.makeAddress(0,1)];
-		rbuffer[3] = memory[Processor.makeAddress(0,2)];
-		
+		rbuffer[0] = memory[Processor.makeAddress(2,0)-500];
+		rbuffer[1] = memory[Processor.makeAddress(2,0)-499];
+		rbuffer[2] = memory[Processor.makeAddress(2,0)-498];
+		rbuffer[3] = memory[Processor.makeAddress(2,0)-497];
+
 		rint = Lib.bytesToInt(rbuffer, 0);
-		if(rint != wint){
+		if(rint!=wint){
 			pass = false;
 			System.err.println("FAIL: Read/Write performed on wrong physical memory!");
 		}
@@ -928,6 +928,8 @@ public class UserProcess {
 		if(pass){
 			System.out.println("success in task2");
 		}
+		test.unloadSections();
+		processNumber = 0;
 	}
 
 	public class FileDescriptor {
