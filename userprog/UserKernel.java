@@ -5,6 +5,7 @@ package nachos.userprog;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.LinkedList;
 
 import nachos.machine.*;
 import nachos.threads.*;
@@ -35,14 +36,20 @@ public class UserKernel extends ThreadedKernel {
 				exceptionHandler();
 			}
 		});
+		
+		/*Lib.assertTrue(availablePages.isEmpty());
+		
+		//no Lock needed, no other threads here when initializing.
+		while(availablePages.size() < Machine.processor().getNumPhysPages())
+			availablePages.add(availablePages.size());*/
 
-		pageLock = new Lock();
 		pageLock.acquire();
-		availablePages = new LinkedList<Integer>();
+		
 		int numPages = Machine.processor().getNumPhysPages();
 		for(Integer i = 0; i < numPages; i++){
 			availablePages.add(i);
 		}
+		
 		pageLock.release();
 	}
 
@@ -200,8 +207,32 @@ public class UserKernel extends ThreadedKernel {
 		Machine.interrupt().restore(status);
 		return true;
 	}
+	
+	public static int getNumAvailablePages(){
+		pageLock.acquire();
+		int numAvailablePages = availablePages.size();
+		pageLock.release();
+		return numAvailablePages;
+	}
+	
+	public static int nextAvailablePage(){
+		pageLock.acquire();
+		if(availablePages.isEmpty()){
+			pageLock.release();
+			return -1;
+		}
+		
+		int ppn = availablePages.getFirst().intValue();
+		pageLock.release();
+		return ppn;
+	}
+	
+	public static void freePage(int ppn){
+		pageLock.acquire();
+		availablePages.add(ppn);
+		pageLock.release();
+	}
 
-	public static Lock pageLock;
-	public static LinkedList<Integer> availablePages;
-
+	public static LinkedList<Integer> availablePages = new LinkedList<Integer>(); 
+	public static Lock pageLock = new Lock();
 }
