@@ -43,7 +43,6 @@ public class UserProcess {
 		exitMap = new HashMap<Integer, Integer>();
 		exitMapLock = new Lock();
 		Machine.interrupt().restore(status);
-		stdLock = new Lock();
 		// int numPhysPages = Machine.processor().getNumPhysPages();
 		// pageTable = new TranslationEntry[numPhysPages];
 		// for (int i = 0; i < numPhysPages; i++)
@@ -709,15 +708,15 @@ public class UserProcess {
 		String fileaddress = readVirtualMemoryString(address, 256);
 
 		if (fileaddress == null) {
-			return -2;
+			return -1;
 		}
 
-		if (!fileaddress.endsWith("coff") && !fileaddress.endsWith("COFF")) {
-			return -3;
+		if (!fileaddress.toLowerCase().endsWith("coff") && !fileaddress.toLowerCase().endsWith("COFF")) {
+			return -1;
 		}
 
 		if (numofArgs < 0) {
-			return -4;
+			return -1;
 		}
 
 		String[] arguments = new String[numofArgs];
@@ -725,13 +724,13 @@ public class UserProcess {
 			byte[] buffer = new byte[4];
 			int numofBytes = readVirtualMemory(argsOffset + (i * 4), buffer);
 			if (numofBytes != 4) {
-				return -5;
+				return -1;
 			}
 
 			int argAddr = Lib.bytesToInt(buffer, 0);
 			String argument = readVirtualMemoryString(argAddr, 256);
 			if (argument == null) {
-				return -6;
+				return -1;
 			}
 			arguments[i] = argument;
 		}
@@ -742,7 +741,7 @@ public class UserProcess {
 			child.parentProcess = this;
 			return child.processId;
 		} else {
-			return -7;
+			return -1;
 		}
 	}
 
@@ -986,5 +985,5 @@ public class UserProcess {
 
 	private static final int maxBufSise = 1 << 20;
 
-	private static Lock stdLock;
+	private static Lock stdLock = new Lock();
 }

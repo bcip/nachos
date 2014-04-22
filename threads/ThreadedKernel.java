@@ -48,6 +48,8 @@ public class ThreadedKernel extends Kernel {
 	 * here.
 	 */
 	public void selfTest() {
+
+		LotteryScheduler.selfTest();
 		
 		/*System.out.println("Test Join:");
 		KThread.selfTest();
