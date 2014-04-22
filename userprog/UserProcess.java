@@ -57,7 +57,9 @@ public class UserProcess {
 	 * @return a new process of the correct class.
 	 */
 	public static UserProcess newUserProcess() {
-		return (UserProcess) Lib.constructObject(Machine.getProcessClassName());
+		return new UserProcess();
+		// return (UserProcess)
+		// Lib.constructObject(Machine.getProcessClassName());
 	}
 
 	/**
@@ -369,12 +371,13 @@ public class UserProcess {
 	 * @return <tt>true</tt> if the sections were successfully loaded.
 	 */
 	protected boolean loadSections() {
+		UserKernel.pageLock.acquire();
+
 		if (numPages > UserKernel.getNumAvailablePages()) {
 			coff.close();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			return false;
 		}
-		UserKernel.pageLock.acquire();
 
 		pageTable = new TranslationEntry[numPages];
 		for (int i = 0; i < numPages; i++) {
@@ -620,27 +623,25 @@ public class UserProcess {
 
 	private int handleExit(int status) {
 		Machine.interrupt().disable();
-		
+
 		unloadSections();
-		
-		for(UserProcess child : childList){
+
+		for (UserProcess child : childList) {
 			child.parentProcess = null;
 		}
-		
+
 		if (parentProcess != null) {
 			parentProcess.exitMapLock.acquire();
 			parentProcess.exitMap.put(processId, status);
 			parentProcess.exitMapLock.release();
 		}
-		
-		/*ListIterator<UserProcess> iter = childList.listIterator();
 
-		while (iter.hasNext()) {
-			UserProcess child = iter.next();
-			child.parentProcess = null;
-		}
-		exitMap.clear();
-		childList.clear();*/
+		/*
+		 * ListIterator<UserProcess> iter = childList.listIterator();
+		 * 
+		 * while (iter.hasNext()) { UserProcess child = iter.next();
+		 * child.parentProcess = null; } exitMap.clear(); childList.clear();
+		 */
 		if (processId == 0) {
 			Kernel.kernel.terminate();
 		} else {
@@ -648,32 +649,32 @@ public class UserProcess {
 		}
 
 		Lib.assertNotReached();
-		
+
 		return -1;
 	}
 
 	private int handleJoin(int pid, int address) {
 		UserProcess child = null;
-		
-		for(UserProcess curChild : childList){
-			if(curChild.processId == pid){
+
+		for (UserProcess curChild : childList) {
+			if (curChild.processId == pid) {
 				child = curChild;
 				break;
 			}
-				
+
 		}
-		
+
 		if (child == null) {
 			return -1;
 		}
-		
+
 		if (child.thread != null) {
 			child.thread.join();
 		}
-		
+
 		childList.remove(child);
 		child.parentProcess = null;
-		
+
 		exitMapLock.acquire();
 		if (!exitMap.containsKey(child.processId)) {
 			return 0;
@@ -682,8 +683,7 @@ public class UserProcess {
 		exitMap.remove(child.processId);
 		exitMapLock.release();
 
-		if (exitstatus == unknowException
-				|| exitstatus == exceptionalExit) {
+		if (exitstatus == unknowException || exitstatus == exceptionalExit) {
 			return 0;
 		}
 
@@ -931,7 +931,7 @@ public class UserProcess {
 	private UserProcess parentProcess;
 	// private LinkedList<UserProcess> childProcesses;
 	// private UThread thread;
-	
+
 	private static final int exceptionalExit = -611;
 	private static final int unknowException = -612;
 	private static final int unknowSystemCall = -613;
