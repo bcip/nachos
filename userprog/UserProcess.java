@@ -549,15 +549,15 @@ public class UserProcess {
 
 		FileDescriptor tmp = fileList[index];
 		byte[] buffer = new byte[bufsize];
-		int ret = tmp.file.read(buffer, 0, bufsize);
+		int numBytesRead = tmp.file.read(buffer, 0, bufsize);
 
-		if (ret < 0) {
+		if (numBytesRead < 0) {
 			return -1;
 		} else {
 			int numBytesWrited = writeVirtualMemory(address, buffer);
-			if (numBytesWrited < bufsize)
+			if (numBytesWrited < numBytesRead)
 				return -1;
-			return ret;
+			return numBytesRead;
 		}
 	}
 
