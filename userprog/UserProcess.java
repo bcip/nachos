@@ -325,8 +325,10 @@ public class UserProcess {
 		// and finally reserve 1 page for arguments
 		numPages++;
 
-		if (!loadSections())
+		if (!loadSections()){
+			coff.close();
 			return false;
+		}
 
 		// store arguments in last page
 		int entryOffset = (numPages - 1) * pageSize;
@@ -345,6 +347,7 @@ public class UserProcess {
 			stringOffset += 1;
 		}
 
+		coff.close();
 		return true;
 	}
 
