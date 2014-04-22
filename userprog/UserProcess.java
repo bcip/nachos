@@ -883,6 +883,46 @@ public class UserProcess {
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
+	
+	public static void selfTest(){
+		boolean pass = true;
+		
+		UserProcess test = new UserProcess();
+		
+		int vaddr = Processor.makeAddress(1, 0) - 1;
+		int wint = 0x012345678;
+		int rint = 0;
+		
+		byte[] wbuffer = new byte[4];
+		byte[] rbuffer = new byte[4];
+		
+		Lib.bytesFromInt(wbuffer,0,wint);
+		test.writeVirtualMemory(vaddr, wbuffer);
+		test.readVirtualMemory(vaddr, rbuffer);
+		
+		rint = Lib.bytesToInt(rbuffer, 0);
+		
+		if(rint != wint){
+			pass = false;
+			System.err.println("FAIL: Read/Write failed to virtual memory!");
+		}
+		
+		byte[] memory = Machine.processor().getMemory();
+		rbuffer[0] = memory[Processor.makeAddress(2,0)-1];
+		rbuffer[1] = memory[Processor.makeAddress(0,0)];
+		rbuffer[2] = memory[Processor.makeAddress(0,1)];
+		rbuffer[3] = memory[Processor.makeAddress(0,2)];
+		
+		rint = Lib.bytesToInt(rbuffer, 0);
+		if(rint != wint){
+			pass = false;
+			System.err.println("FAIL: Read/Write performed on wrong physical memory!");
+		}
+		
+		if(pass){
+			System.out.println("success in task2");
+		}
+	}
 
 	public class FileDescriptor {
 		public String filename = null;
