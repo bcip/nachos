@@ -163,56 +163,52 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
-		/*int numSuccessedBytes = 0;
-		while (numSuccessedBytes < length) {
-			int paddr = translate(vaddr, false);
-			if (paddr < 0)
-				break;
-			data[offset] = memory[paddr];
-			offset++;
-			vaddr++;
-			numSuccessedBytes++;
-		}
-
-		return numSuccessedBytes;*/
+		/*
+		 * int numSuccessedBytes = 0; while (numSuccessedBytes < length) { int
+		 * paddr = translate(vaddr, false); if (paddr < 0) break; data[offset] =
+		 * memory[paddr]; offset++; vaddr++; numSuccessedBytes++; }
+		 * 
+		 * return numSuccessedBytes;
+		 */
 		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+		if (vaddr < 0 || vaddr >= numPages * pageSize)
 			return 0;
-		int l = Machine.processor().makeAddress(numPages-1, pageSize-1)-vaddr;
-		if(length > l)
-			length = l;
-		
+		if(vaddr + length >= numPages * pageSize)
+			length = numPages * pageSize - vaddr;
+
 		int firstPage = Machine.processor().pageFromAddress(vaddr);
-		int lastPage = Machine.processor().pageFromAddress(vaddr+length);
+		int lastPage = Machine.processor().pageFromAddress(vaddr + length);
 		int bytesTransferred = 0;
-		
-		for(int i = firstPage; i <= lastPage; i++){
-			if(!pageTable[i].valid){
+
+		for (int i = firstPage; i <= lastPage; i++) {
+			if (!pageTable[i].valid) {
 				break;
 			}
 			int firstAddress = Machine.processor().makeAddress(i, 0);
-			int lastAddress = Machine.processor().makeAddress(i, pageSize-1);
-			
+			int lastAddress = Machine.processor().makeAddress(i, pageSize - 1);
+
 			int start = 0;
 			int end = 0;
-			
-			if(vaddr <= firstAddress && vaddr+length >= lastAddress){
+
+			if (vaddr <= firstAddress && vaddr + length >= lastAddress) {
 				start = 0;
-				end = pageSize-1;
-			}else if(vaddr > firstAddress && vaddr+length >= lastAddress){
-				start = vaddr-firstAddress;
-				end = pageSize-1;
-			}else if(vaddr <= firstAddress && vaddr+length < lastAddress){
+				end = pageSize - 1;
+			} else if (vaddr > firstAddress && vaddr + length >= lastAddress) {
+				start = vaddr - firstAddress;
+				end = pageSize - 1;
+			} else if (vaddr <= firstAddress && vaddr + length < lastAddress) {
 				start = 0;
-				end = (vaddr+length)-firstAddress;
-			}else{
-				start = vaddr-firstAddress;
-				end = vaddr+length-firstAddress;
+				end = (vaddr + length) - firstAddress;
+			} else {
+				start = vaddr - firstAddress;
+				end = vaddr + length - firstAddress;
 			}
-			
-			int firstPhyAddress = Machine.processor().makeAddress(pageTable[i].ppn, start);
-			System.arraycopy(memory, firstPhyAddress, data, offset+bytesTransferred, end-start);
-			bytesTransferred += (end-start);
+
+			int firstPhyAddress = Machine.processor().makeAddress(
+					pageTable[i].ppn, start);
+			System.arraycopy(memory, firstPhyAddress, data, offset
+					+ bytesTransferred, end - start);
+			bytesTransferred += (end - start);
 			pageTable[i].used = true;
 		}
 		return bytesTransferred;
@@ -256,56 +252,52 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
-
-		/*int numSuccessedBytes = 0;
-		while (numSuccessedBytes < length) {
-			int paddr = translate(vaddr, true);
-			if (paddr < 0)
-				break;
-			memory[paddr] = data[offset];
-			offset++;
-			vaddr++;
-			numSuccessedBytes++;
-		}
-
-		return numSuccessedBytes;*/
+		/*
+		 * int numSuccessedBytes = 0; while (numSuccessedBytes < length) { int
+		 * paddr = translate(vaddr, true); if (paddr < 0) break; memory[paddr] =
+		 * data[offset]; offset++; vaddr++; numSuccessedBytes++; }
+		 * 
+		 * return numSuccessedBytes;
+		 */
 		// for now, just assume that virtual addresses equal physical addresses
 		if (vaddr < 0 || vaddr >= memory.length)
 			return 0;
-		int l = Machine.processor().makeAddress(numPages-1, pageSize-1);
-		if(length > l)
+		int l = Machine.processor().makeAddress(numPages - 1, pageSize - 1);
+		if (length > l)
 			length = l;
 		int bytesTransferred = 0;
 		int firstPage = Machine.processor().pageFromAddress(vaddr);
-		int lastPage = Machine.processor().pageFromAddress(vaddr+length);
-		
-		for(int i = firstPage; i <= lastPage; i++){
-			if(!pageTable[i].valid || pageTable[i].readOnly){
+		int lastPage = Machine.processor().pageFromAddress(vaddr + length);
+
+		for (int i = firstPage; i <= lastPage; i++) {
+			if (!pageTable[i].valid || pageTable[i].readOnly) {
 				break;
 			}
 			int firstAddress = Machine.processor().makeAddress(i, 0);
-			int lastAddress = Machine.processor().makeAddress(i, pageSize-1);
-			
+			int lastAddress = Machine.processor().makeAddress(i, pageSize - 1);
+
 			int start = 0;
 			int end = 0;
-			
-			if(vaddr <= firstAddress && vaddr+length >= lastAddress){
+
+			if (vaddr <= firstAddress && vaddr + length >= lastAddress) {
 				start = 0;
-				end = pageSize-1;
-			}else if(vaddr > firstAddress && vaddr+length >= lastAddress){
-				start = vaddr-firstAddress;
-				end = pageSize-1;
-			}else if(vaddr <= firstAddress && vaddr+length < lastAddress){
+				end = pageSize - 1;
+			} else if (vaddr > firstAddress && vaddr + length >= lastAddress) {
+				start = vaddr - firstAddress;
+				end = pageSize - 1;
+			} else if (vaddr <= firstAddress && vaddr + length < lastAddress) {
 				start = 0;
-				end = (vaddr+length)-firstAddress;
-			}else{
-				start = vaddr-firstAddress;
-				end = vaddr+length-firstAddress;
+				end = (vaddr + length) - firstAddress;
+			} else {
+				start = vaddr - firstAddress;
+				end = vaddr + length - firstAddress;
 			}
-			
-			int firstPhyAddress = Machine.processor().makeAddress(pageTable[i].ppn, start);
-			System.arraycopy(data, offset+bytesTransferred, memory, firstPhyAddress, end-start);
-			bytesTransferred += (end-start);
+
+			int firstPhyAddress = Machine.processor().makeAddress(
+					pageTable[i].ppn, start);
+			System.arraycopy(data, offset + bytesTransferred, memory,
+					firstPhyAddress, end - start);
+			bytesTransferred += (end - start);
 			pageTable[i].used = true;
 			pageTable[i].dirty = true;
 		}
@@ -429,15 +421,16 @@ public class UserProcess {
 			return false;
 		}
 		UserKernel.pageLock.acquire();
-		
+
 		pageTable = new TranslationEntry[numPages];
-		for(int i = 0; i < numPages; i++){
+		for (int i = 0; i < numPages; i++) {
 			int nextPage = UserKernel.availablePages.poll();
-			pageTable[i] = new TranslationEntry(i, nextPage, true, false, false, false);
+			pageTable[i] = new TranslationEntry(i, nextPage, true, false,
+					false, false);
 		}
-		
+
 		UserKernel.pageLock.release();
-		
+
 		// load sections
 		for (int s = 0; s < coff.getNumSections(); s++) {
 			CoffSection section = coff.getSection(s);
@@ -448,13 +441,14 @@ public class UserProcess {
 			for (int i = 0; i < section.getLength(); i++) {
 				int vpn = section.getFirstVPN() + i;
 
-				/*// allocate phisical page
-				pageTable[vpn] = new TranslationEntry(vpn,
-						UserKernel.nextAvailablePage(), true,
-						section.isReadOnly(), false, false);*/
+				/*
+				 * // allocate phisical page pageTable[vpn] = new
+				 * TranslationEntry(vpn, UserKernel.nextAvailablePage(), true,
+				 * section.isReadOnly(), false, false);
+				 */
 
 				// for now, just assume virtual addresses=physical addresses
-				
+
 				section.loadPage(i, pageTable[vpn].ppn);
 			}
 		}
@@ -466,20 +460,22 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-		
-		/*for (int vpn = 0; vpn < numPages; vpn++) {
-			UserKernel.freePage(pageTable[vpn].ppn);*/
+
+		/*
+		 * for (int vpn = 0; vpn < numPages; vpn++) {
+		 * UserKernel.freePage(pageTable[vpn].ppn);
+		 */
 
 		UserKernel.pageLock.acquire();
-		
-		for(int i = 0; i < numPages; i++){
+
+		for (int i = 0; i < numPages; i++) {
 			UserKernel.availablePages.add(pageTable[i].ppn);
 		}
-		
+
 		UserKernel.pageLock.release();
-		
-		for(int i = 0; i < 16; i++){
-			if(fileList[i] != null){
+
+		for (int i = 0; i < 16; i++) {
+			if (fileList[i] != null) {
 				handleClose(i);
 			}
 
@@ -650,111 +646,111 @@ public class UserProcess {
 	}
 
 	private int handleExit(int status) {
-		if(parentProcess != null){
+		if (parentProcess != null) {
 			parentProcess.childList.remove(this);
 		}
 		unloadSections();
-		if(parentProcess != null){
+		if (parentProcess != null) {
 			parentProcess.exitMapLock.acquire();
 			parentProcess.exitMap.put(processId, status);
 			parentProcess.exitMapLock.release();
 		}
 		ListIterator<UserProcess> iter = childList.listIterator();
-		
-		while(iter.hasNext()){
+
+		while (iter.hasNext()) {
 			UserProcess child = iter.next();
 			child.parentProcess = null;
 		}
 		exitMap.clear();
 		childList.clear();
-		if(processId == 0){
+		if (processId == 0) {
 			Kernel.kernel.terminate();
-		}else{
+		} else {
 			UThread.finish();
 		}
 		return status;
 	}
-	
-	private int handleJoin(int pid, int address){
+
+	private int handleJoin(int pid, int address) {
 		UserProcess child = null;
 		ListIterator<UserProcess> iter = childList.listIterator();
-		while(iter.hasNext()){
+		while (iter.hasNext()) {
 			UserProcess tmp = iter.next();
-			if(tmp.processId == pid){
+			if (tmp.processId == pid) {
 				child = tmp;
 			}
 		}
-		if(child == null){
+		if (child == null) {
 			return -1;
 		}
-		if(child.thread != null){
+		if (child.thread != null) {
 			child.thread.join();
 		}
 		childList.remove(child);
 		child.parentProcess = null;
 		exitMapLock.acquire();
-		if(!exitMap.containsKey(child.processId)){
+		if (!exitMap.containsKey(child.processId)) {
 			return 0;
 		}
 		int exitstatus = exitMap.get(child.processId);
 		exitMap.remove(child.processId);
 		exitMapLock.release();
-		
-		if(exitstatus == unknowException){
+
+		if (exitstatus == unknowException) {
 			return 0;
 		}
-		
+
 		byte[] buffer = new byte[4];
 		Lib.bytesFromInt(buffer, 0, exitstatus);
 		int numOfBytesTransfer = writeVirtualMemory(address, buffer);
-		if(numOfBytesTransfer == 4){
+		if (numOfBytesTransfer == 4) {
 			return 1;
-		}else{
+		} else {
 			return 1;
 		}
 	}
-	
-	private int handleExec(int address, int numofArgs, int argsOffset){
-		if(address < 0){
+
+	private int handleExec(int address, int numofArgs, int argsOffset) {
+		if (address < 0) {
 			return -1;
 		}
-		
+
 		String fileaddress = readVirtualMemoryString(address, 256);
-		
-		if(fileaddress == null){
+
+		if (fileaddress == null) {
 			return -1;
 		}
-		
-		if(!fileaddress.endsWith("coff")&&!fileaddress.endsWith("COFF")){
+
+		if (!fileaddress.endsWith("coff") && !fileaddress.endsWith("COFF")) {
 			return -1;
 		}
-		
-		if(numofArgs < 0){
+
+		if (numofArgs < 0) {
 			return -1;
 		}
-		
+
 		String[] arguments = new String[numofArgs];
-		for(int i=0; i < numofArgs; i++){
+		for (int i = 0; i < numofArgs; i++) {
 			byte[] buffer = new byte[4];
-			int numofBytes = readVirtualMemory(argsOffset + (i * 4),buffer);
-			if(numofBytes != 4){
+			int numofBytes = readVirtualMemory(argsOffset + (i * 4), buffer);
+			if (numofBytes != 4) {
 				return -1;
 			}
-			
+
 			int argAddr = Lib.bytesToInt(buffer, 0);
 			String argument = readVirtualMemoryString(argAddr, 256);
-			if(argument == null){
+			if (argument == null) {
 				return -1;
 			}
 			arguments[i] = argument;
 		}
-		
+
 		UserProcess child = UserProcess.newUserProcess();
-		if(child.execute(fileaddress, arguments)){
+		if (child.execute(fileaddress, arguments)) {
 			childList.add(child);
 			child.parentProcess = this;
 			return child.processId;
-		}else{
+		} else {
 			return -1;
 		}
 	}
@@ -850,9 +846,9 @@ public class UserProcess {
 		case syscallExit:
 			return handleExit(a0);
 		case syscallExec:
-			return handleExec(a0,a1,a2);
+			return handleExec(a0, a1, a2);
 		case syscallJoin:
-			return handleJoin(a0,a1);
+			return handleJoin(a0, a1);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -932,13 +928,13 @@ public class UserProcess {
 
 	private final int processId;
 	private static int processNumber = 0;
-	
+
 	protected LinkedList<UserProcess> childList;
-	
-	//protected UserProcess parent;
-	
+
+	// protected UserProcess parent;
+
 	protected UThread thread;
-	
+
 	protected Map<Integer, Integer> exitMap;
 	protected Lock exitMapLock;
 
@@ -946,8 +942,8 @@ public class UserProcess {
 	protected OpenFile stdout;
 
 	private UserProcess parentProcess;
-	//private LinkedList<UserProcess> childProcesses;
-	//private UThread thread;
+	// private LinkedList<UserProcess> childProcesses;
+	// private UThread thread;
 
 	private static final int unknowException = -612;
 	private static final int unknowSystemCall = -613;
