@@ -128,27 +128,12 @@ testID 11
 grader console
 11
 success
-ff11--YYKKMMCC
+f1-BZORf1-BZOR
+success
 stty: standard input: Inappropriate ioctl for device
 stty: standard input: Inappropriate ioctl for device
-nachos.machine.AssertionFailureError: test failed: incorrect console output
-at nachos.machine.Lib.assertTrue(Lib.java:89)
-at nachos.machine.Lib.assertNotReached(Lib.java:106)
-at nachos.ag.UserGrader.agRequest(UserGrader.java:93)
-at nachos.ag.UserGrader.exceptionHandler(UserGrader.java:56)
-at nachos.machine.Processor$MipsException.handle(Processor.java:600)
-at nachos.machine.Processor.run(Processor.java:101)
-at nachos.userprog.UThread.runProgram(UThread.java:33)
-at nachos.userprog.UThread.access$000(UThread.java:13)
-at nachos.userprog.UThread$1.run(UThread.java:22)
-at nachos.threads.KThread.runThread(KThread.java:161)
-at nachos.threads.KThread.access$000(KThread.java:30)
-at nachos.threads.KThread$1.run(KThread.java:150)
-at nachos.machine.TCB.threadroot(TCB.java:235)
-at nachos.machine.TCB.access$100(TCB.java:25)
-at nachos.machine.TCB$1.run(TCB.java:93)
-at java.lang.Thread.run(Thread.java:744)
 stty: standard input: Inappropriate ioctl for device
 =============================
 go to home
+
 
