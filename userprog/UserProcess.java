@@ -162,7 +162,7 @@ public class UserProcess {
 				&& offset + length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-
+		
 		/*
 		 * int numSuccessedBytes = 0; while (numSuccessedBytes < length) { int
 		 * paddr = translate(vaddr, false); if (paddr < 0) break; data[offset] =
@@ -234,15 +234,8 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0
 				&& offset + length <= data.length);
 
-		byte[] memory = Machine.processor().getMemory();
 
-		/*
-		 * int numSuccessedBytes = 0; while (numSuccessedBytes < length) { int
-		 * paddr = translate(vaddr, true); if (paddr < 0) break; memory[paddr] =
-		 * data[offset]; offset++; vaddr++; numSuccessedBytes++; }
-		 * 
-		 * return numSuccessedBytes;
-		 */
+		byte[] memory = Machine.processor().getMemory();
 
 		if (vaddr < 0 || vaddr >= numPages * pageSize)
 			return 0;
