@@ -375,6 +375,7 @@ public class UserProcess {
 
 		if (numPages > UserKernel.getNumAvailablePages()) {
 			coff.close();
+			UserKernel.pageLock.release();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			return false;
 		}
