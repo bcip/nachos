@@ -1,7 +1,6 @@
 *.aux
 *.o
 *.a
-*.coff
 *.log
 *.pdf
 *.gz
