@@ -688,6 +688,7 @@ public class UserProcess {
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+			return handleExit(-1);
 			Lib.assertNotReached("Unknown system call!" + syscall);
 		}
 		return 0;
@@ -727,6 +728,7 @@ public class UserProcess {
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: "
 					+ Processor.exceptionNames[cause]);
+			return handleExit(-1);
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
