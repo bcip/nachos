@@ -43,7 +43,6 @@ public class UserProcess {
 		exitMap = new HashMap<Integer, Integer>();
 		exitMapLock = new Lock();
 		Machine.interrupt().restore(status);
-		stdLock = new Lock();
 		// int numPhysPages = Machine.processor().getNumPhysPages();
 		// pageTable = new TranslationEntry[numPhysPages];
 		// for (int i = 0; i < numPhysPages; i++)
@@ -433,6 +432,12 @@ public class UserProcess {
 
 		UserKernel.pageLock.release();
 
+			for(int i = 0; i < pageTable.length; i++){
+    		if(pageTable[i].used == true){
+    			pageTable[i].used = false;
+    		}
+    	}
+
 		for (int i = 0; i < 16; i++) {
 			if (fileList[i] != null) {
 				handleClose(i);
@@ -712,7 +717,7 @@ public class UserProcess {
 			return -1;
 		}
 
-		if (!fileaddress.endsWith("coff") && !fileaddress.endsWith("COFF")) {
+		if (!fileaddress.toLowerCase().endsWith("coff") && !fileaddress.toLowerCase().endsWith("COFF")) {
 			return -1;
 		}
 
@@ -986,5 +991,5 @@ public class UserProcess {
 
 	private static final int maxBufSise = 1 << 20;
 
-	private static Lock stdLock;
+	private static Lock stdLock = new Lock();
 }
