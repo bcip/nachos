@@ -670,8 +670,10 @@ public class UserProcess {
 		if (child.thread != null) {
 			child.thread.join();
 		}
+		
 		childList.remove(child);
 		child.parentProcess = null;
+		
 		exitMapLock.acquire();
 		if (!exitMap.containsKey(child.processId)) {
 			return 0;
@@ -680,7 +682,8 @@ public class UserProcess {
 		exitMap.remove(child.processId);
 		exitMapLock.release();
 
-		if (exitstatus == unknowException) {
+		if (exitstatus == unknowException
+				|| exitstatus == exceptionalExit) {
 			return 0;
 		}
 
