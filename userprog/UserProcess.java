@@ -432,12 +432,6 @@ public class UserProcess {
 
 		UserKernel.pageLock.release();
 
-			for(int i = 0; i < pageTable.length; i++){
-    		if(pageTable[i].used == true){
-    			pageTable[i].used = false;
-    		}
-    	}
-
 		for (int i = 0; i < 16; i++) {
 			if (fileList[i] != null) {
 				handleClose(i);
